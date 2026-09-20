@@ -1,0 +1,3297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RUNEFORGE: ARENA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0A0D13;
+  --void-2:#0E121B;
+  --panel:#151A26;
+  --panel-2:#1B2130;
+  --line:#2A3145;
+  --line-soft:#232A3A;
+  --bone:#EDEAE0;
+  --muted:#8890A6;
+  --muted-2:#5D6478;
+  --ember:#E0A94A;
+  --ember-soft:#F2C97A;
+  --arcane:#9D6CFF;
+  --hp:#E15757;
+  --hp-soft:#FF8A8A;
+  --energy:#4FA3E3;
+  --good:#5FD08C;
+  --bad:#E15757;
+  --c-common:#9AA5B4;
+  --c-rare:#4FA3E3;
+  --c-epic:#B073F0;
+  --c-legendary:#E0A94A;
+  --c-mythic:#FF6B7A;
+  --c-divine:#39FFB0;
+  --radius-s:8px;
+  --radius-m:14px;
+  --radius-l:22px;
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  color-scheme: dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+html{scroll-padding-top:var(--safe-t);}
+body{
+  margin:0;
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(157,108,255,.10), transparent 60%),
+    radial-gradient(700px 500px at 110% 10%, rgba(224,169,74,.08), transparent 55%),
+    var(--void);
+  color:var(--bone);
+  font-family:'Rajdhani',sans-serif;
+  min-height:100%;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.display{font-family:'Cinzel',serif; letter-spacing:.02em; margin:0;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+button{font-family:inherit;}
+.btn-reset{all:unset;cursor:pointer;}
+
+/* ---------- APP SHELL ---------- */
+#app{
+  max-width:560px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  padding-top:var(--safe-t);
+}
+
+/* Top status bar */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px 10px;
+  position:sticky;
+  top:var(--safe-t);
+  z-index:40;
+  background:linear-gradient(180deg, rgba(10,13,19,.97), rgba(10,13,19,.86) 70%, transparent);
+  backdrop-filter:blur(6px);
+}
+.brand{
+  display:flex;align-items:center;gap:8px;
+  font-family:'Cinzel',serif;font-weight:700;font-size:15px;
+  color:var(--ember-soft);
+  white-space:nowrap;
+}
+.brand .rune{
+  width:22px;height:22px;border-radius:6px;
+  background:conic-gradient(from 220deg, var(--arcane), var(--ember), var(--arcane));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;box-shadow:0 0 12px rgba(157,108,255,.5);
+}
+.currencies{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;justify-content:flex-end;}
+.pill{
+  display:flex;align-items:center;gap:5px;
+  background:var(--panel);
+  border:1px solid var(--line);
+  padding:5px 9px 5px 7px;
+  border-radius:999px;
+  font-weight:700;font-size:12.5px;
+  white-space:nowrap;
+}
+.pill .ic{font-size:13px;}
+.pill.gold{color:var(--ember-soft);}
+.pill.gem{color:#9BD8FF;}
+.pill.acct{color:var(--arcane);cursor:pointer;}
+
+/* Main content */
+main{
+  flex:1;
+  padding:2px 14px calc(96px + var(--safe-b));
+  min-height:0;
+}
+.page{display:none;animation:fadeUp .28s ease both;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@media (prefers-reduced-motion: reduce){
+  .page{animation:none;}
+  *{animation-duration:.001s !important; transition-duration:.001s !important;}
+}
+
+.section-title{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin:18px 0 10px;
+}
+.section-title h2{font-size:17px;color:var(--bone);}
+.section-title .sub{font-size:12px;color:var(--muted);font-weight:600;}
+.section-title:first-child{margin-top:6px;}
+.info-btn{
+  width:18px;height:18px;border-radius:50%;border:1px solid var(--line-soft);background:var(--void-2);
+  color:var(--muted);font-size:11px;font-weight:800;font-family:Georgia,serif;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin-left:6px;flex-shrink:0;
+}
+.info-btn:active{transform:scale(.9);}
+.section-title h2{display:inline-flex;align-items:center;gap:0;}
+
+.card{
+  background:linear-gradient(180deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:14px;
+}
+
+/* ---------- BOTTOM NAV ---------- */
+nav.tabbar{
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:0;
+  width:100%;
+  max-width:560px;
+  z-index:50;
+  padding:8px 10px calc(10px + var(--safe-b));
+  background:linear-gradient(180deg, rgba(14,18,27,.4), rgba(10,13,19,.97) 35%);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--line-soft);
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:4px;
+}
+.tab-btn{
+  all:unset;cursor:pointer;
+  flex:1;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 2px 6px;
+  border-radius:12px;
+  color:var(--muted);
+  font-size:10.5px;font-weight:700;letter-spacing:.02em;
+  transition:color .15s, background .15s;
+}
+.tab-btn .tico{font-size:19px;line-height:1;}
+.tab-btn.active{color:var(--ember-soft);background:rgba(224,169,74,.08);}
+.tab-btn:active{transform:scale(.94);}
+.tab-battle{
+  flex:0 0 68px;
+  margin-top:-30px;
+  display:flex;flex-direction:column;align-items:center;
+}
+.tab-battle .orb{
+  all:unset;cursor:pointer;
+  width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%, #ff8a5c, #d9481f 55%, #7a2410 100%);
+  border:3px solid #1a0d06;
+  box-shadow:0 0 0 3px rgba(224,169,74,.35), 0 8px 20px rgba(217,72,31,.45), inset 0 2px 6px rgba(255,255,255,.25);
+  font-size:26px;
+  transition:transform .15s;
+}
+.tab-battle .orb:active{transform:scale(.92);}
+.tab-battle span{font-size:10.5px;font-weight:800;color:var(--ember-soft);margin-top:4px;letter-spacing:.03em;}
+.tab-battle.active .orb{box-shadow:0 0 0 3px var(--ember), 0 0 22px rgba(224,169,74,.7), inset 0 2px 6px rgba(255,255,255,.3);}
+
+/* ---------- RARITY HELPERS ---------- */
+.r-common{--rc:var(--c-common);}
+.r-rare{--rc:var(--c-rare);}
+.r-epic{--rc:var(--c-epic);}
+.r-legendary{--rc:var(--c-legendary);}
+.r-mythic{--rc:var(--c-mythic);}
+.r-divine{--rc:var(--c-divine); position:relative;}
+.r-divine.hero-hero::after, .r-divine.portrait::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  box-shadow:0 0 24px 2px color-mix(in srgb, var(--c-divine) 65%, transparent);
+  animation:divinePulse 2.2s ease-in-out infinite;
+}
+@keyframes divinePulse{0%,100%{opacity:.55;}50%{opacity:1;}}
+.rarity-tag{
+  font-size:9.5px;font-weight:800;letter-spacing:.04em;
+  padding:2px 7px;border-radius:999px;
+  color:#10131b;
+  background:var(--rc);
+  display:inline-block;
+}
+.rarity-text{color:var(--rc);font-weight:700;}
+
+/* ---------- HERO / CHARACTER CARDS ---------- */
+.hero-hero{
+  border-radius:var(--radius-l);
+  padding:16px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background:linear-gradient(160deg, var(--panel-2), var(--panel) 70%);
+}
+.hero-hero::before{
+  content:"";position:absolute;inset:-40% -10% auto -10%;height:220px;
+  background:radial-gradient(circle, color-mix(in srgb, var(--rc) 55%, transparent), transparent 70%);
+  filter:blur(6px);opacity:.55;pointer-events:none;
+}
+.hero-top{display:flex;gap:12px;align-items:center;position:relative;}
+.portrait{
+  width:74px;height:74px;border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;flex-shrink:0;
+  background:conic-gradient(from 200deg, color-mix(in srgb, var(--rc) 70%, #0A0D13), #0A0D13 60%, color-mix(in srgb, var(--rc) 40%, #0A0D13));
+  border:2px solid var(--rc);
+  box-shadow:0 0 18px color-mix(in srgb, var(--rc) 55%, transparent), inset 0 0 12px rgba(0,0,0,.4);
+  position:relative;
+}
+.portrait .stars{
+  position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);
+  display:flex;gap:1px;background:#0A0D13;border:1px solid var(--rc);border-radius:8px;padding:1px 4px;
+}
+.portrait .stars span{font-size:8px;color:var(--rc);}
+.hero-name{font-family:'Cinzel',serif;font-size:16.5px;font-weight:700;color:var(--bone);}
+.hero-tags{display:flex;gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap;}
+.tagchip{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--void-2);border:1px solid var(--line);padding:2px 7px;border-radius:7px;}
+.power-line{margin-top:9px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);position:relative;}
+.power-line b{color:var(--ember-soft);font-size:15px;font-family:'Cinzel',serif;}
+
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;position:relative;}
+.stat-box{
+  background:var(--void-2);border:1px solid var(--line-soft);border-radius:10px;
+  padding:8px 10px;
+}
+.stat-box .lbl{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.03em;}
+.stat-box .val{font-size:16px;font-weight:700;color:var(--bone);font-family:'Cinzel',serif;}
+.stat-box .val small{font-size:11px;color:var(--good);font-weight:700;margin-left:4px;}
+
+/* Level bar */
+.xpbar{height:7px;border-radius:5px;background:var(--void-2);overflow:hidden;border:1px solid var(--line-soft);margin-top:4px;}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg, var(--arcane), #c9a6ff);}
+
+/* ---------- SKILL SLOTS ---------- */
+.skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px;}
+.skill-slot{
+  aspect-ratio:1/1.05;
+  border-radius:14px;
+  border:1.5px dashed var(--line);
+  background:var(--void-2);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;
+  position:relative;
+  color:var(--muted-2);
+  font-size:10px;font-weight:700;
+  transition:transform .12s;
+}
+.skill-slot:active{transform:scale(.95);}
+.skill-slot.filled{
+  border-style:solid;border-color:var(--rc);
+  background:radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--rc) 30%, #0A0D13), #0A0D13 75%);
+  box-shadow:0 0 14px color-mix(in srgb, var(--rc) 45%, transparent), inset 0 0 10px rgba(0,0,0,.45);
+}
+.skill-slot .sic{font-size:22px;}
+.skill-slot .slvl{
+  position:absolute;bottom:3px;right:4px;font-size:9px;background:rgba(0,0,0,.6);
+  border-radius:5px;padding:1px 4px;color:var(--bone);font-weight:800;
+}
+.skill-slot .sname{font-size:9px;margin-top:3px;text-align:center;padding:0 3px;color:var(--bone);font-weight:700;line-height:1.15;}
+.skill-slot .sstars{position:absolute;top:3px;left:0;right:0;display:flex;justify-content:center;gap:1px;font-size:6.5px;color:var(--rc);}
+.skill-slot.empty .plus{font-size:22px;color:var(--line);}
+
+/* synergy summary */
+.synergy-box{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--void-2);border:1px solid var(--line-soft);}
+.synergy-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;color:var(--muted);}
+.synergy-row b{color:var(--bone);}
+.syn-chip{display:flex;align-items:center;gap:5px;font-weight:700;}
+.syn-chip .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.syn-active{color:var(--good) !important;}
+
+/* ---------- ROSTER LIST ---------- */
+.roster-list{display:flex;flex-direction:column;gap:9px;margin-top:10px;}
+.roster-item{
+  display:flex;align-items:center;gap:11px;
+  padding:9px;border-radius:14px;
+  background:var(--panel);border:1px solid var(--line);
+  cursor:pointer;
+}
+.roster-item.selected{border-color:var(--ember);box-shadow:0 0 0 1px var(--ember) inset;}
+.roster-item .portrait{width:46px;height:46px;font-size:19px;border-radius:12px;}
+.roster-item .portrait .stars{transform:translateX(-50%) scale(.75);bottom:-6px;}
+
+/* ---------- HERO vs SKILL type tags ----------
+   Every portrait/icon box gets a small corner pill so hero cards and skill
+   cards are distinguishable at a glance, even without reading the name. */
+.type-tag{
+  position:absolute;top:-4px;left:-4px;z-index:3;
+  font-size:6.5px;font-weight:800;letter-spacing:.05em;
+  padding:2px 4px;border-radius:5px;line-height:1.2;pointer-events:none;
+  border:1px solid rgba(0,0,0,.35);white-space:nowrap;
+}
+.type-tag.tag-hero{background:#B26CFF;color:#1b0a2e;box-shadow:0 0 6px rgba(178,108,255,.7);}
+.type-tag.tag-skill{background:#3ad196;color:#04241a;box-shadow:0 0 6px rgba(58,209,150,.7);}
+.ri-info{flex:1;min-width:0;}
+.ri-name{font-weight:700;font-size:13.5px;color:var(--bone);}
+.ri-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+.ri-power{font-size:13px;font-weight:800;color:var(--ember-soft);font-family:'Cinzel',serif;text-align:right;}
+.ri-active-badge{font-size:9px;font-weight:800;color:var(--good);letter-spacing:.03em;}
+
+/* ---------- UPGRADE TAB ---------- */
+.seg-tabs{display:flex;gap:6px;background:var(--void-2);padding:4px;border-radius:12px;border:1px solid var(--line-soft);}
+.seg-btn{all:unset;flex:1;text-align:center;padding:8px 4px;border-radius:9px;font-size:12.5px;font-weight:700;color:var(--muted);cursor:pointer;}
+.seg-btn.active{background:var(--panel);color:var(--ember-soft);box-shadow:0 0 0 1px var(--line);}
+
+.upgrade-row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:12px;margin-top:10px;
+}
+.upgrade-row .portrait{width:52px;height:52px;font-size:22px;border-radius:12px;flex-shrink:0;}
+.upgrade-row .portrait .stars{transform:translateX(-50%) scale(.8);}
+.ur-info{flex:1;min-width:0;}
+.ur-name{font-weight:700;font-size:14px;}
+.ur-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.cost-line{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11.5px;font-weight:700;flex-wrap:wrap;}
+.cost-chip{display:flex;align-items:center;gap:3px;background:var(--void-2);border:1px solid var(--line-soft);padding:2px 7px;border-radius:7px;}
+.cost-chip.bad{color:var(--bad);border-color:rgba(225,87,87,.4);}
+.btn{
+  all:unset;box-sizing:border-box;cursor:pointer;text-align:center;
+  padding:9px 14px;border-radius:10px;font-weight:800;font-size:12.5px;
+  letter-spacing:.02em;
+  transition:transform .1s, filter .15s;
+  max-width:100%;
+}
+.btn:active{transform:scale(.95);}
+.btn-primary{background:linear-gradient(180deg,var(--ember-soft),var(--ember));color:#241505;box-shadow:0 3px 10px rgba(224,169,74,.3);}
+.btn-arcane{background:linear-gradient(180deg,#c9a6ff,var(--arcane));color:#1c0e33;box-shadow:0 3px 10px rgba(157,108,255,.35);}
+.btn-ghost{background:var(--void-2);border:1px solid var(--line);color:var(--bone);}
+.btn-danger{background:rgba(225,87,87,.15);color:#ff9d9d;border:1px solid rgba(225,87,87,.4);}
+.btn:disabled,.btn.disabled{filter:grayscale(.6);opacity:.45;pointer-events:none;}
+.btn-block{display:block;width:100%;text-align:center;}
+.btn-sm{padding:6px 10px;font-size:11px;border-radius:8px;}
+
+/* ---------- SHOP ---------- */
+.crate-card{
+  border-radius:var(--radius-l);
+  padding:16px;
+  border:1px solid var(--line);
+  background:linear-gradient(160deg,var(--panel-2),var(--panel));
+  position:relative;overflow:hidden;margin-top:12px;
+}
+.crate-card::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(circle at 85% -10%, color-mix(in srgb, var(--rc) 40%, transparent), transparent 60%);
+  pointer-events:none;
+}
+.crate-top{display:flex;align-items:center;gap:12px;position:relative;}
+.crate-icon{
+  width:56px;height:56px;border-radius:16px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  background:conic-gradient(from 210deg,color-mix(in srgb, var(--rc) 65%, #0A0D13),#0A0D13 60%,color-mix(in srgb,var(--rc) 45%,#0A0D13));
+  border:2px solid var(--rc);box-shadow:0 0 14px color-mix(in srgb, var(--rc) 50%, transparent);
+}
+.crate-name{font-family:'Cinzel',serif;font-weight:700;font-size:15.5px;}
+.crate-desc{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.odds-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:12px;position:relative;}
+.odds-chip{font-size:9.5px;font-weight:800;padding:3px 7px;border-radius:7px;background:var(--void-2);border:1px solid var(--line-soft);}
+.crate-buy{display:flex;gap:8px;margin-top:13px;position:relative;}
+
+.mat-row{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-top:9px;}
+.mat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--void-2);border:1px solid var(--line-soft);flex-shrink:0;}
+.mat-info{flex:1;}
+.mat-name{font-weight:700;font-size:13px;}
+.mat-desc{font-size:10.5px;color:var(--muted);}
+.mat-own{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ---------- TROPHY PATH ---------- */
+.trophy-progress-wrap{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.trophy-progress-wrap .xpbar{flex:1;margin-top:0;height:9px;}
+.trophy-progress-label{font-size:11px;color:var(--muted);white-space:nowrap;}
+
+/* Horizontal "Arena Road" (Clash-Royale style) */
+.tpath-scroll{overflow-x:auto;margin:14px -4px 0;padding:8px 4px 16px;-webkit-overflow-scrolling:touch;}
+.tpath-track{display:flex;align-items:flex-start;min-width:max-content;padding:4px 6px;}
+.tpath-seg{width:26px;height:4px;border-radius:2px;background:var(--line);flex-shrink:0;margin-top:26px;}
+.tpath-seg.done{background:linear-gradient(90deg,var(--ember),var(--ember-soft));}
+.tpath-node{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;width:68px;cursor:pointer;}
+.tpath-badge{
+  width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:22px;position:relative;
+  background:radial-gradient(circle at 35% 25%, #2a2f3d, #12151c 72%);
+  border:2.5px solid var(--line-soft);color:var(--muted);
+}
+.tpath-node.locked .tpath-badge{opacity:.45;}
+.tpath-node.claimable .tpath-badge{
+  border-color:var(--ember);color:var(--ember-soft);
+  box-shadow:0 0 16px rgba(255,183,92,.6);
+  animation:tpathPulse 1.5s ease-in-out infinite;
+}
+.tpath-node.claimed .tpath-badge{border-color:var(--good);color:var(--good);}
+.tpath-node.selected .tpath-badge{box-shadow:0 0 0 2px #fff, 0 0 16px rgba(255,183,92,.6);}
+@keyframes tpathPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.09);}}
+.tpath-badge .tp-check{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(10,13,19,.55);border-radius:50%;font-size:20px;color:var(--good);}
+.tpath-badge .tp-chest{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+  font-size:12px;background:#0A0D13;border:1px solid var(--ember);border-radius:6px;padding:0 4px;color:var(--ember-soft);}
+.tn-name{font-size:8.5px;text-align:center;color:var(--bone);font-weight:800;line-height:1.15;}
+.tn-tro{font-size:8px;color:var(--muted);font-weight:700;}
+.tpath-node.claimable .tn-tro{color:var(--ember-soft);}
+.tpath-node.claimed .tn-tro{color:var(--good);}
+
+/* Detail panel for the selected Arena stop */
+.tp-detail{margin-top:6px;border-radius:14px;padding:12px 13px;background:var(--panel);border:1px solid var(--line);}
+.tp-detail-top{display:flex;align-items:center;gap:11px;}
+.tp-detail-icon{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:20px;background:var(--void-2);border:1px solid var(--line-soft);color:var(--ember-soft);}
+.tp-detail-name{font-weight:800;font-size:14px;color:var(--bone);font-family:'Cinzel',serif;}
+.tp-detail-sub{font-size:10.5px;color:var(--muted);margin-top:1px;}
+.tp-detail-rewards{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.tp-reward-chip{font-size:10.5px;font-weight:700;color:var(--bone);background:var(--void-2);border:1px solid var(--line-soft);
+  padding:3px 8px;border-radius:8px;}
+
+/* ---------- DAILY LOGIN MODAL ---------- */
+.daily-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0;}
+.daily-cell{border-radius:11px;padding:8px 4px;text-align:center;background:var(--void-2);border:1px solid var(--line-soft);}
+.daily-cell.dc-done{border-color:var(--good);background:color-mix(in srgb, var(--good) 14%, var(--void-2));}
+.daily-cell.dc-today{border-color:var(--ember);box-shadow:0 0 10px rgba(255,183,92,.4);}
+.daily-cell .dc-day{font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;}
+.daily-cell .dc-ic{font-size:17px;margin:3px 0;}
+.daily-cell .dc-val{font-size:9.5px;color:var(--bone);font-weight:700;}
+
+/* ---------- BATTLE ---------- */
+.vs-wrap{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;}
+.fighter{flex:1;text-align:center;}
+.fighter .portrait{width:64px;height:64px;font-size:26px;margin:0 auto;border-radius:16px;}
+.fighter .portrait .stars{transform:translateX(-50%) scale(.75);}
+.fighter-name{font-weight:700;font-size:12.5px;margin-top:6px;}
+.fighter-power{font-size:11px;color:var(--muted);}
+.vs-mid{font-family:'Cinzel',serif;font-weight:800;color:var(--ember);font-size:20px;flex:0 0 auto;padding:0 4px;}
+
+.matchup-note{text-align:center;font-size:12px;color:var(--muted);margin-top:10px;}
+.matchup-note b{color:var(--bone);}
+
+/* Battle arena (during fight) */
+.arena{
+  border-radius:var(--radius-l);
+  border:1px solid var(--line);
+  background:
+    radial-gradient(600px 300px at 20% 0%, rgba(157,108,255,.12), transparent 60%),
+    radial-gradient(600px 300px at 90% 100%, rgba(224,169,74,.10), transparent 60%),
+    linear-gradient(180deg,var(--panel-2),var(--void-2));
+  padding:16px;
+  margin-top:12px;
+  position:relative;
+  min-height:300px;
+  overflow:hidden;
+}
+.combatant{position:relative;margin-bottom:14px;}
+.combatant:last-child{margin-bottom:0;}
+.c-head{display:flex;align-items:center;gap:9px;}
+.c-portrait{width:42px;height:42px;border-radius:11px;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:conic-gradient(from 200deg,color-mix(in srgb, var(--rc) 65%, #0A0D13),#0A0D13 60%);border:2px solid var(--rc);}
+.c-name{font-weight:700;font-size:12.5px;}
+.c-name small{color:var(--muted);font-weight:600;font-size:10px;}
+.hpbar-wrap{height:14px;border-radius:8px;background:var(--void-2);border:1px solid var(--line-soft);overflow:hidden;margin-top:6px;position:relative;}
+.hpbar{height:100%;background:linear-gradient(90deg,#ff8a8a,var(--hp));transition:width .5s cubic-bezier(.2,.8,.2,1);}
+.hpbar.enemy{background:linear-gradient(90deg,#ffb17a,#e07a2f);}
+.hp-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6);}
+.energy-dots{display:flex;gap:3px;margin-top:5px;}
+.edot{width:8px;height:8px;border-radius:50%;background:var(--void-2);border:1px solid var(--line-soft);}
+.edot.on{background:var(--energy);box-shadow:0 0 5px var(--energy);}
+.status-row{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap;}
+.status-chip{font-size:9px;font-weight:700;padding:1px 6px;border-radius:6px;}
+.status-burn{background:rgba(255,122,69,.18);color:#ff8a52;}
+.status-frost{background:rgba(95,209,255,.18);color:#5fd1ff;}
+.status-shield{background:rgba(95,208,140,.18);color:#5fd08c;}
+.status-def{background:rgba(225,87,87,.18);color:#ff9d9d;}
+.status-spd{background:rgba(157,108,255,.18);color:#c9a6ff;}
+
+.dmg-float{
+  position:absolute;font-weight:800;font-family:'Cinzel',serif;
+  animation:floatUp 1s ease-out forwards;
+  pointer-events:none;text-shadow:0 2px 6px rgba(0,0,0,.6);
+  z-index:5;
+}
+@keyframes floatUp{
+  0%{opacity:0;transform:translateY(0) scale(.7);}
+  15%{opacity:1;transform:translateY(-6px) scale(1.15);}
+  100%{opacity:0;transform:translateY(-34px) scale(1);}
+}
+.dmg-float.crit{font-size:19px;color:#ffcf5c;}
+.dmg-float.normal{font-size:15px;color:#fff;}
+.dmg-float.heal{font-size:15px;color:#8bffb0;}
+.shake{animation:shakeFx .32s;}
+@keyframes shakeFx{
+  0%,100%{transform:translateX(0);}
+  20%{transform:translateX(-5px);}
+  40%{transform:translateX(5px);}
+  60%{transform:translateX(-3px);}
+  80%{transform:translateX(3px);}
+}
+.flash-hit{animation:flashFx .3s;}
+@keyframes flashFx{0%{filter:brightness(2.2) saturate(1.4);}100%{filter:brightness(1);}}
+
+.log-line{font-size:11.5px;padding:5px 0;color:var(--muted);border-bottom:1px dashed var(--line-soft);}
+.log-line b{color:var(--bone);}
+.log-line.crit b.dmg{color:#ffcf5c;}
+.log-line .dmg{color:var(--hp-soft);font-weight:700;}
+.log-wrap{max-height:150px;overflow-y:auto;margin-top:12px;padding-right:4px;}
+
+.skip-btn{position:absolute;top:12px;right:12px;z-index:6;}
+
+/* Result overlay */
+.result-overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(6,7,11,.88);
+  backdrop-filter:blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  opacity:0;pointer-events:none;
+  transition:opacity .25s;
+}
+.result-overlay.show{opacity:1;pointer-events:all;}
+.result-card{
+  width:100%;max-width:380px;
+  background:linear-gradient(160deg,var(--panel-2),var(--panel));
+  border:1px solid var(--line);border-radius:var(--radius-l);
+  padding:26px 22px 22px;text-align:center;
+  transform:scale(.85);transition:transform .3s cubic-bezier(.2,.9,.3,1.2);
+  max-height:88vh;overflow-y:auto;
+}
+.result-overlay.show .result-card{transform:scale(1);}
+.result-rank{font-family:'Cinzel',serif;font-size:52px;font-weight:800;margin:6px 0 2px;
+  background:linear-gradient(180deg,#fff,var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.result-title{font-size:19px;font-weight:800;letter-spacing:.03em;}
+.result-title.win{color:var(--good);}
+.result-title.lose{color:var(--bad);}
+.result-sub{font-size:12.5px;color:var(--muted);margin-top:4px;}
+.reward-list{display:flex;flex-direction:column;gap:8px;margin-top:18px;text-align:left;}
+.reward-item{display:flex;align-items:center;gap:10px;background:var(--void-2);border:1px solid var(--line-soft);border-radius:10px;padding:9px 11px;}
+.reward-item .ic{font-size:19px;}
+.reward-item b{color:var(--ember-soft);}
+
+/* Pull reveal overlay */
+.pull-overlay{position:fixed;inset:0;z-index:110;background:rgba(4,5,8,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .2s;}
+.pull-overlay.show{opacity:1;pointer-events:all;}
+.pull-stage{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:480px;}
+.pull-card{
+  width:96px;
+  border-radius:16px;
+  border:2px solid var(--rc);
+  background:conic-gradient(from 210deg,color-mix(in srgb, var(--rc) 55%, #0A0D13),#0A0D13 60%,color-mix(in srgb,var(--rc) 40%,#0A0D13));
+  padding:12px 6px 10px;
+  text-align:center;
+  box-shadow:0 0 22px color-mix(in srgb, var(--rc) 55%, transparent);
+  opacity:0;transform:translateY(14px) scale(.8) rotateY(90deg);
+  animation:pullIn .5s cubic-bezier(.2,.9,.3,1.1) forwards;
+  position:relative;
+}
+@keyframes pullIn{to{opacity:1;transform:translateY(0) scale(1) rotateY(0);}}
+.pull-card .pic{font-size:30px;}
+.pull-card .pn{font-size:10.5px;font-weight:800;margin-top:6px;color:var(--bone);line-height:1.2;}
+.pull-card .pr{font-size:8.5px;font-weight:800;color:var(--rc);margin-top:3px;letter-spacing:.03em;}
+.pull-card .pnew{font-size:8px;color:var(--good);font-weight:800;margin-top:2px;}
+.pull-card .type-tag{top:6px;left:6px;}
+.pull-close{margin-top:26px;}
+
+/* profile */
+.profile-stat{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line-soft);font-size:13px;}
+.profile-stat b{color:var(--bone);}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(100px + var(--safe-b));transform:translateX(-50%) translateY(10px);
+  background:var(--panel);border:1px solid var(--line);color:var(--bone);
+  padding:9px 16px;border-radius:999px;font-size:12.5px;font-weight:700;
+  z-index:200;opacity:0;transition:opacity .25s, transform .25s;pointer-events:none;
+  box-shadow:0 6px 18px rgba(0,0,0,.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.empty-hint{text-align:center;color:var(--muted);font-size:12.5px;padding:20px 10px;}
+
+.detail-back{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:8px;}
+
+.grow-note{font-size:10.5px;color:var(--muted-2);margin-top:10px;text-align:center;}
+
+/* ---------- EPIC "MAXED" TREATMENT ---------- */
+/* GPU-friendly: glow pulse animates opacity on a static-shadow pseudo layer
+   instead of animating box-shadow directly (which forces a repaint every frame).
+   The sweep pseudo-element is sized exactly to its own card (inset:0, no
+   oversized width/transform) and only slides its background-position inside
+   that fixed box, so each card/skill/badge gets its own self-contained shine
+   instead of one giant bar bleeding across neighboring elements. */
+@keyframes maxGlowPulse{0%,100%{opacity:.55;}50%{opacity:1;}}
+@keyframes maxSweepBG{0%{background-position:-120% 0;}100%{background-position:120% 0;}}
+.maxed{
+  position:relative; border-color:#ffd678 !important;
+  box-shadow:0 0 10px 1px rgba(255,213,120,.55), 0 0 0 1px rgba(255,213,120,.7) inset;
+}
+.maxed::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+  box-shadow:0 0 26px 4px rgba(255,213,120,.9), 0 0 0 1.5px #ffe9b0 inset;
+  animation:maxGlowPulse 1.8s ease-in-out infinite;
+  will-change:opacity;
+}
+.maxed::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2;
+  overflow:hidden;
+  background:linear-gradient(100deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+  background-size:260% 100%;
+  background-repeat:no-repeat;
+  animation:maxSweepBG 2.6s linear infinite;
+  mix-blend-mode:overlay;
+}
+.max-badge{
+  display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;letter-spacing:.05em;
+  padding:2px 7px;border-radius:999px;color:#2a1a02;
+  position:relative;overflow:hidden;
+  background:linear-gradient(90deg,#ffe9b0,#e0a94a,#ffe9b0);
+}
+.max-badge::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg, transparent 35%, rgba(255,255,255,.6) 50%, transparent 65%);
+  background-size:260% 100%;
+  background-repeat:no-repeat;
+  animation:maxSweepBG 2.2s linear infinite;
+}
+.hero-hero.maxed{box-shadow:0 0 30px 4px rgba(255,213,120,.45);}
+/* On the wide hero-detail card the glow/sweep layers would otherwise paint
+   OVER the stat numbers (since they have an explicit z-index above the
+   plain-flow stat-grid). Here they sit behind the actual content instead —
+   still visible in the padding/gaps and around the portrait, but no longer
+   washing over the readable DEF/SPD/etc values. Other maxed elements
+   (skill slots, portraits, badges) keep the shine in front as before.*/
+.hero-hero.maxed::before, .hero-hero.maxed::after{z-index:-1;}
+.stat-train-row.maxed{background:linear-gradient(160deg, rgba(255,213,120,.10), var(--panel-2));}
+
+/* ---------- FRIEND DUEL / ACCOUNT LOCK OVERLAYS ---------- */
+.friend-code-box{
+  width:100%;box-sizing:border-box;resize:none;min-height:74px;
+  padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--void-2);color:var(--bone);font-size:11px;font-family:monospace;
+  word-break:break-all;
+}
+.lock-screen{
+  position:fixed;inset:0;z-index:400;background:var(--void);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;gap:14px;text-align:center;
+}
+.lock-screen input{
+  width:100%;max-width:280px;box-sizing:border-box;padding:11px 13px;border-radius:10px;
+  border:1px solid var(--line);background:var(--void-2);color:var(--bone);font-size:14px;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand"><span class="rune">◆</span> RUNEFORGE</div>
+    <div class="currencies">
+      <div class="pill acct" id="acctPill">✶ <span id="acctLvl">1</span></div>
+      <div class="pill gold">◈ <span id="goldAmt">0</span></div>
+      <div class="pill gem">♦ <span id="gemAmt">0</span></div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ BATTLE PAGE ============ -->
+    <section class="page" id="page-battle">
+      <div class="section-title"><h2>Arena<button class="info-btn" data-info="arena">i</button></h2><span class="sub">1 v 1 · rated</span></div>
+      <div class="card hero-hero r-common" id="matchCard"></div>
+
+      <div class="section-title"><h2>Trophy Path<button class="info-btn" data-info="trophypath">i</button></h2><span class="sub">milestone rewards</span></div>
+      <div class="card" id="trophyPathCard"></div>
+
+      <div class="section-title" id="helperSectionTitle"><h2>Helper<button class="info-btn" data-info="helper">i</button></h2><span class="sub">stats + assist strike</span></div>
+      <div class="card" id="helperCard"></div>
+
+      <div class="section-title"><h2>Friend Duel<button class="info-btn" data-info="friendduel">i</button></h2><span class="sub">browser-only, no server</span></div>
+      <div class="card" id="friendDuelCard"></div>
+
+      <div class="section-title"><h2>Battle Log<button class="info-btn" data-info="battlelog">i</button></h2><span class="sub" id="battleLogSub">last result</span></div>
+      <div class="card" id="lastResultCard">
+        <div class="empty-hint">No battles fought yet. Enter the arena to begin your legend.</div>
+      </div>
+    </section>
+
+    <!-- ============ HEROES PAGE ============ -->
+    <section class="page" id="page-heroes">
+      <div class="section-title"><h2>Active Hero<button class="info-btn" data-info="activehero">i</button></h2><span class="sub" id="heroCountSub">0 owned</span></div>
+      <div class="card hero-hero" id="activeHeroCard"></div>
+
+      <div class="section-title"><h2>Skill Loadout<button class="info-btn" data-info="skillloadout">i</button></h2><span class="sub">tap a slot</span></div>
+      <div class="skill-grid" id="skillGrid"></div>
+      <div class="synergy-box" id="synergyBox"></div>
+
+      <div class="section-title"><h2>Your Roster<button class="info-btn" data-info="roster">i</button></h2><span class="sub">tap to set active</span></div>
+      <div class="roster-list" id="rosterList"></div>
+    </section>
+
+    <!-- ============ UPGRADE PAGE ============ -->
+    <section class="page" id="page-upgrade">
+      <div class="section-title"><h2>Forge<button class="info-btn" data-info="forge">i</button></h2><span class="sub">grow your power</span></div>
+      <div class="seg-tabs">
+        <button class="seg-btn active" data-seg="hero">Hero</button>
+        <button class="seg-btn" data-seg="skills">Skills</button>
+        <button class="seg-btn" data-seg="runes">Runes</button>
+        <button class="seg-btn" data-seg="talents">Talents</button>
+        <button class="seg-btn" data-seg="stats">Stats</button>
+      </div>
+
+      <div id="upgHeroPane"></div>
+      <div id="upgSkillsPane" style="display:none;"></div>
+      <div id="upgRunesPane" style="display:none;"></div>
+      <div id="upgTalentsPane" style="display:none;"></div>
+      <div id="upgStatsPane" style="display:none;"></div>
+    </section>
+
+    <!-- ============ SHOP PAGE ============ -->
+    <section class="page" id="page-shop">
+      <div class="section-title"><h2>Vault Shop<button class="info-btn" data-info="crates">i</button></h2><span class="sub">crates &amp; materials</span></div>
+      <div id="crateList"></div>
+
+      <div class="section-title"><h2>Materials<button class="info-btn" data-info="materials">i</button></h2><span class="sub">buy with gold</span></div>
+      <div id="matList"></div>
+    </section>
+
+    <!-- ============ PROFILE PAGE ============ -->
+    <section class="page" id="page-profile">
+      <div class="section-title"><h2>Account</h2><span class="sub">your name &amp; identity</span></div>
+      <div class="card">
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;">Your commander name — shown to friends in Friend Duels.</div>
+        <input type="text" id="usernameInput" placeholder="Choose a username" maxlength="16" autocomplete="off"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);margin-bottom:10px;font-size:13px;">
+        <button class="btn btn-primary btn-block btn-sm" id="btnSaveUsername">Save Username</button>
+      </div>
+
+      <div class="section-title"><h2>Account Security<button class="info-btn" data-info="security">i</button></h2><span class="sub">local encryption</span></div>
+      <div class="card" id="securityCard"></div>
+
+      <div class="section-title"><h2>Daily Rewards<button class="info-btn" data-info="daily">i</button></h2><span class="sub">account</span></div>
+      <div class="card">
+        <div class="profile-stat"><span>Daily Login Streak</span><b id="pDailyStreak">0 days</b></div>
+        <button class="btn btn-ghost btn-block btn-sm" id="btnOpenDaily" style="margin-top:8px;">View Daily Reward</button>
+      </div>
+
+      <div class="section-title"><h2>Commander Profile<button class="info-btn" data-info="commanderprofile">i</button></h2><span class="sub">account</span></div>
+      <div class="card">
+        <div class="profile-stat"><span>Account Level</span><b id="pAcctLvl">1</b></div>
+        <div class="xpbar"><i id="pAcctXpBar" style="width:0%"></i></div>
+        <div class="profile-stat" style="margin-top:10px;"><span>Total Battles</span><b id="pBattles">0</b></div>
+        <div class="profile-stat"><span>Victories</span><b id="pWins">0</b></div>
+        <div class="profile-stat"><span>Trophies</span><b id="pTrophies">0</b></div>
+        <div class="profile-stat"><span>Win Rate</span><b id="pWinrate">0%</b></div>
+        <div class="profile-stat"><span>Heroes Collected</span><b id="pHeroes">0</b></div>
+        <div class="profile-stat"><span>Skills Collected</span><b id="pSkills">0</b></div>
+        <div class="profile-stat"><span>Global Power Bonus</span><b id="pBonus">+0.0%</b></div>
+      </div>
+
+      <div class="section-title"><h2>Settings</h2></div>
+      <div class="card">
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">Your progress is saved automatically to this device. Starting over cannot be undone.</div>
+        <button class="btn btn-danger btn-block" id="btnResetGame">Restart Account</button>
+      </div>
+
+      <div class="section-title"><h2>Developer Tools</h2><span class="sub">for testing</span></div>
+      <div class="card" id="devLockedCard">
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">Restricted area. Enter the developer password to reveal testing tools.</div>
+        <input type="password" id="devPassInput" placeholder="Developer password" autocomplete="off"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);margin-bottom:10px;font-size:13px;">
+        <button class="btn btn-ghost btn-block" id="btnDevUnlock">Unlock Developer Tools</button>
+      </div>
+      <div class="card" id="devToolsCard" style="display:none;">
+        <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px;">Instantly own and max every hero, skill &amp; rune. Optional. Infinite mode below works without it.</div>
+        <button class="btn btn-arcane btn-block" id="btnDevMaxAll">⚑ Unlock &amp; Max Everything</button>
+        <div style="font-size:12.5px;color:var(--muted);margin:12px 0 8px;" id="devInfiniteHint">Toggle unlimited Gold &amp; Gems at any time.</div>
+        <button class="btn btn-primary btn-block" id="btnDevInfinite">∞ Infinite Gold &amp; Gems</button>
+      </div>
+      <div class="grow-note">RUNEFORGE: ARENA · a single-page tactics RPG</div>
+    </section>
+
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab-btn active" data-tab="heroes"><span class="tico">🛡</span>Heroes</button>
+    <button class="tab-btn" data-tab="upgrade"><span class="tico">⚒</span>Forge</button>
+    <div class="tab-battle active" data-tab="battle"><button class="orb">⚔</button><span>Battle</span></div>
+    <button class="tab-btn" data-tab="shop"><span class="tico">❖</span>Shop</button>
+    <button class="tab-btn" data-tab="profile"><span class="tico">☰</span>Profile</button>
+  </nav>
+
+</div>
+
+<div class="result-overlay" id="resultOverlay">
+  <div class="result-card">
+    <div class="result-rank" id="resultRank">S</div>
+    <div class="result-title win" id="resultTitle">VICTORY</div>
+    <div class="result-sub" id="resultSub">Decisive win</div>
+    <div class="reward-list" id="resultRewards"></div>
+    <button class="btn btn-primary btn-block" style="margin-top:18px;" id="btnCloseResult">Continue</button>
+  </div>
+</div>
+
+<div class="pull-overlay" id="pullOverlay">
+  <h3 class="display" style="color:var(--ember-soft);margin-bottom:18px;">Crate Opened</h3>
+  <div class="pull-stage" id="pullStage"></div>
+  <button class="btn btn-primary pull-close" id="btnClosePull">Collect All</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="lock-screen" id="lockScreen" style="display:none;">
+  <div class="rune" style="width:44px;height:44px;border-radius:12px;background:conic-gradient(from 220deg, var(--arcane), var(--ember), var(--arcane));display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 18px rgba(157,108,255,.5);">◆</div>
+  <h3 class="display" style="color:var(--bone);font-size:19px;">Account Protected</h3>
+  <div style="color:var(--muted);font-size:12.5px;max-width:280px;">This save is encrypted. Enter your password to unlock it on this device.</div>
+  <input type="password" id="lockPassInput" placeholder="Password" autocomplete="off">
+  <button class="btn btn-primary" style="width:100%;max-width:280px;" id="lockUnlockBtn">Unlock</button>
+  <div style="color:var(--muted-2);font-size:11px;max-width:280px;">There is no password recovery — if it's lost, this save cannot be decrypted.</div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   DATA DEFINITIONS
+========================================================================= */
+const RARITY = {
+  common:    {key:'common',    label:'Common',    order:0, mult:1.00, shardsToStar:[3,5,8,14,22], crystal:'crystalCommon'},
+  rare:      {key:'rare',      label:'Rare',      order:1, mult:1.35, shardsToStar:[3,5,8,14,22], crystal:'crystalRare'},
+  epic:      {key:'epic',      label:'Epic',      order:2, mult:1.85, shardsToStar:[3,5,8,14,22], crystal:'crystalEpic'},
+  legendary: {key:'legendary', label:'Legendary', order:3, mult:2.55, shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
+  mythic:    {key:'mythic',    label:'Mythic',    order:4, mult:3.4,  shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
+  divine:    {key:'divine',    label:'Divine',    order:5, mult:4.6,  shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
+};
+const ELEMENTS = {
+  fire:   {label:'Fire',   sym:'♨',  color:'#FF7A45'},
+  frost:  {label:'Frost',  sym:'❄',  color:'#5FD1FF'},
+  storm:  {label:'Storm',  sym:'↯', color:'#F5D949'},
+  void:   {label:'Void',   sym:'◈',  color:'#B26CFF'},
+  radiant:{label:'Radiant',sym:'☀',  color:'#FFE79A'},
+  iron:   {label:'Iron',   sym:'⚙',  color:'#B7C2CC'},
+};
+const CLASSES = {
+  warrior:{label:'Warrior',sym:'⚔'},
+  assassin:{label:'Assassin',sym:'†'},
+  guardian:{label:'Guardian',sym:'🛡'},
+  mage:{label:'Mage',sym:'✦'},
+  support:{label:'Support',sym:'✚'},
+  reaper:{label:'Reaper',sym:'☠'},
+};
+
+// Distinctive glyph set replacing generic emoji across the UI.
+const ICONS = {
+  gold:'◈', gem:'♦', xp:'✶', acct:'✶',
+  crateBronze:'▤', crateSilver:'◫', crateGold:'❖', crateMythic:'♛',
+  matCommon:'◇', matRare:'◆', matEpic:'❖', matLegendary:'✷',
+  shard:'✧', refresh:'⟳', sword:'⚔',
+  tabHeroes:'🛡', tabForge:'⚒', tabShop:'❖', tabProfile:'☰',
+};
+
+/* ---------- NEW-PLAYER INFO TEXTS ----------
+   Shown via the small "i" buttons next to section headers across the app. */
+const INFO_TEXTS = {
+  arena:{title:'Arena', body:'Fight a 1v1 match against a matched opponent. Win to earn Gold, XP and Trophies; a loss costs some Trophies but never your gear. Matchmaking softly targets a fair win chance and gives a small mercy boost after losing streaks.'},
+  trophypath:{title:'Trophy Path', body:'A road of Arenas unlocked by your all-time highest Trophy count (losing a match never locks you back out of rewards already reached). Tap a stop on the road to see its rewards, then claim once you\'ve reached it. Some Arenas also grant a free chest.'},
+  helper:{title:'Helper', body:'Pick a second hero to assist in battle. It contributes a share of its stats to your active hero (more if they share an Element or Class) and lands a bonus assist strike every 3rd round.'},
+  friendduel:{title:'Friend Duel', body:'A local, browser-only sparring match against a hero you set up yourself. Great for testing matchups — but it awards no Gold, XP or Trophies since no server is involved.'},
+  battlelog:{title:'Battle Log', body:'Shows the outcome of your most recent Arena fight: win or loss, rounds taken, HP remaining and the rewards you earned.'},
+  activehero:{title:'Active Hero', body:'The hero you currently fight with. Its Level, Star rank, Runes, Talents and equipped Skills all feed into its combat stats. Tap any hero in Your Roster to make it active.'},
+  skillloadout:{title:'Skill Loadout', body:'Equip up to 6 skills here. They fire in this exact slot order during battle — the first ready skill (off cooldown, enough Energy) is used each turn, otherwise your hero falls back to a Basic Strike. Equipping skills of the same Element also grants a Synergy damage bonus, shown below the grid.'},
+  roster:{title:'Your Roster', body:'Every hero you own, sorted by Power. Tap one to make it your Active Hero. Pull more heroes from crates in the Shop.'},
+  forge:{title:'Forge', body:'Your hub for growing power, split into five tabs — Hero (level & star-up your active hero), Skills (level & star-up owned skills), Runes (equip imbues that unlock battle Perks at tier 5), Talents (spend one point per account level across Offense/Defense/Fortune trees), and Stats (spend Gold to permanently train account-wide base stats).'},
+  crates:{title:'Vault Shop — Crates', body:'Spend Gold or Gems to open crates for a chance at new heroes or skills (or shards/gold if you already own the result). Higher-tier crates cost more but roll better rarities — the Mythic Vault guarantees at least Epic.'},
+  materials:{title:'Materials', body:'Crystals are spent to level up heroes and skills — the tier of crystal needed matches the rarity being leveled. Buy extra with Gold if you\'re short.'},
+  security:{title:'Account Security', body:'Optionally lock your save with a local password. Everything is encrypted and stored only on this device — there is no server, so a forgotten password cannot be recovered.'},
+  daily:{title:'Daily Rewards', body:'Come back once per calendar day to claim Gold, Gems and, every 7th day, a free chest. Missing a full day resets your streak back to Day 1.'},
+  commanderprofile:{title:'Commander Profile', body:'Your account-wide progress: level, battle record, Trophies, and how many of the game\'s heroes and skills you\'ve collected. Global Power Bonus is a small permanent boost from your account level.'},
+};
+function showInfoModal(key){
+  const info = INFO_TEXTS[key];
+  if(!info) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'result-overlay show';
+  overlay.style.zIndex = '210';
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:360px;">
+    <h3 class="display" style="font-size:17px;color:var(--bone);margin-bottom:8px;">${info.title}</h3>
+    <div style="font-size:12.5px;color:var(--muted);line-height:1.5;">${info.body}</div>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:14px;" id="btnCloseInfo">Got it</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  const close = ()=>overlay.remove();
+  overlay.querySelector('#btnCloseInfo').addEventListener('click', close);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) close(); });
+}
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('[data-info]');
+  if(btn) showInfoModal(btn.getAttribute('data-info'));
+});
+
+// base stats at level 1, star 1
+const CHAR_DEFS = [
+ {id:'kael',   name:'Kael Emberfist',   rarity:'legendary', cls:'warrior', el:'fire',    icon:'⚔', base:{hp:860,atk:96,def:52,spd:98,crit:14,critDmg:160}},
+ {id:'sable',  name:'Sable Nightshade', rarity:'epic',      cls:'assassin',el:'void',    icon:'†', base:{hp:640,atk:88,def:34,spd:118,crit:26,critDmg:180}},
+ {id:'ysolde', name:'Ysolde Frostward', rarity:'rare',      cls:'guardian',el:'frost',   icon:'🛡', base:{hp:820,atk:58,def:70,spd:76,crit:8,critDmg:150}},
+ {id:'thren',  name:'Threnody',         rarity:'epic',      cls:'mage',    el:'storm',   icon:'✦',  base:{hp:600,atk:102,def:30,spd:104,crit:16,critDmg:165}},
+ {id:'bront',  name:'Brontide',         rarity:'common',    cls:'guardian',el:'iron',    icon:'🛡', base:{hp:760,atk:54,def:64,spd:70,crit:6,critDmg:150}},
+ {id:'lyric',  name:'Lyric of Dawn',    rarity:'rare',      cls:'support', el:'radiant', icon:'✚',  base:{hp:660,atk:60,def:40,spd:92,crit:10,critDmg:150}},
+ {id:'grix',   name:'Grix the Hollow',  rarity:'common',    cls:'warrior', el:'void',    icon:'⚔', base:{hp:700,atk:70,def:44,spd:82,crit:10,critDmg:150}},
+ {id:'sera',   name:'Seraphine Vow',    rarity:'mythic',    cls:'mage',    el:'radiant', icon:'✦',  base:{hp:780,atk:112,def:42,spd:106,crit:20,critDmg:190}},
+ {id:'doran',  name:'Doran Coalheart',  rarity:'rare',      cls:'guardian',el:'fire',    icon:'🛡', base:{hp:800,atk:62,def:66,spd:74,crit:8,critDmg:150}},
+ {id:'vanta',  name:'Vantablack',       rarity:'legendary', cls:'mage',    el:'void',    icon:'✦',  base:{hp:700,atk:108,def:36,spd:112,crit:22,critDmg:185}},
+ {id:'pip',    name:'Pip Sparkwrench',  rarity:'common',    cls:'support', el:'iron',    icon:'✚',  base:{hp:600,atk:52,def:38,spd:88,crit:8,critDmg:150}},
+ {id:'ashen',  name:'Ashen Revenant',   rarity:'epic',      cls:'assassin',el:'fire',    icon:'†', base:{hp:660,atk:94,def:32,spd:120,crit:28,critDmg:185}},
+
+ // ---- DIVINE-tier signature hero: a one-of-a-kind, extremely powerful unit ----
+ {id:'grimreaper', name:'The Grim Reaper', rarity:'divine', cls:'reaper', el:'void', icon:'☠',
+   base:{hp:1650, atk:255, def:102, spd:148, crit:38, critDmg:255},
+   signature:true, flavor:'A permanently overwhelming Divine hero — his edge never fades, star or no star.'},
+];
+
+// power multiplier grows with skill level (per-cast). type: attack/heal/buff/debuff
+const SKILL_DEFS = [
+ {id:'s_emberstrike', name:'Emberstrike',      rarity:'common', el:'fire',   type:'attack', power:1.15, cd:0, cost:1, icon:'🔥', desc:'A quick flame slash.'},
+ {id:'s_wildfire',     name:'Wildfire Lash',    rarity:'rare',   el:'fire',   type:'attack', power:1.35, cd:1, cost:2, dot:{stat:'burn',pct:.06,turns:3}, icon:'🔥', desc:'Burns the target over time.'},
+ {id:'s_inferno',      name:'Inferno Crown',    rarity:'legendary', el:'fire', type:'attack', power:2.05, cd:3, cost:4, dot:{stat:'burn',pct:.09,turns:3}, icon:'🔥', desc:'Unleashes a scorching burst.'},
+
+ {id:'s_frostbite',    name:'Frost Bite',       rarity:'common', el:'frost',  type:'attack', power:1.10, cd:0, cost:1, debuff:{stat:'spd',pct:-.10,turns:2}, icon:'❄', desc:'Chills the enemy, slowing them.'},
+ {id:'s_glacialward',  name:'Glacial Ward',     rarity:'rare',   el:'frost',  type:'buff',   power:0, cd:3, cost:2, buff:{stat:'def',pct:.22,turns:3}, icon:'❄', desc:'Encases self in protective ice.'},
+ {id:'s_abszero',      name:'Absolute Zero',    rarity:'epic',   el:'frost',  type:'attack', power:1.55, cd:2, cost:3, debuff:{stat:'atk',pct:-.16,turns:2}, icon:'❄', desc:'Freezing strike that weakens attack.'},
+
+ {id:'s_staticjolt',   name:'Static Jolt',      rarity:'common', el:'storm',  type:'attack', power:1.20, cd:0, cost:1, icon:'↯', desc:'A crackling bolt of energy.'},
+ {id:'s_chainlight',   name:'Chain Lightning',  rarity:'rare',   el:'storm',  type:'attack', power:1.10, cd:1, cost:2, doubleHit:.35, icon:'↯', desc:'Chance to strike twice.'},
+ {id:'s_tempest',      name:'Tempest Roar',     rarity:'legendary', el:'storm', type:'attack', power:2.10, cd:3, cost:4, doubleHit:.20, icon:'↯', desc:'Calls down a raging tempest.'},
+
+ {id:'s_shadowcut',    name:'Shadow Cut',       rarity:'common', el:'void',   type:'attack', power:1.18, cd:0, cost:1, icon:'◈', desc:'A cut from the dark.'},
+ {id:'s_siphon',       name:'Hollow Siphon',    rarity:'rare',   el:'void',   type:'attack', power:1.25, cd:1, cost:2, lifesteal:.35, icon:'◈', desc:'Drains life from the target.'},
+ {id:'s_eclipse',      name:'Eclipse Veil',     rarity:'epic',   el:'void',   type:'buff',   power:0, cd:3, cost:3, buff:{stat:'crit',pct:.18,turns:3}, icon:'◈', desc:'Cloaks self, sharpening lethality.'},
+
+ {id:'s_guidinglight', name:'Guiding Light',    rarity:'common', el:'radiant',type:'heal', power:0.9, cd:1, cost:2, icon:'☀', desc:'Restores health.'},
+ {id:'s_dawnburst',    name:'Dawnburst',        rarity:'rare',   el:'radiant',type:'attack', power:1.15, cd:1, cost:2, heal:.30, icon:'☀', desc:'Strikes and heals self from the light.'},
+ {id:'s_aegisdawn',    name:'Aegis of Dawn',    rarity:'legendary', el:'radiant', type:'buff', power:0, cd:3, cost:3, shield:.20, icon:'☀', desc:'Grants a protective shield.'},
+
+ {id:'s_shieldbash',   name:'Shield Bash',      rarity:'common', el:'iron',   type:'attack', power:1.05, cd:0, cost:1, debuff:{stat:'def',pct:-.12,turns:2}, icon:'⚙', desc:'Cracks the enemy defenses.'},
+ {id:'s_fortify',      name:'Fortify',          rarity:'rare',   el:'iron',   type:'buff', power:0, cd:2, cost:2, buff:{stat:'def',pct:.20,turns:3}, icon:'⚙', desc:'Reinforces own armor plating.'},
+ {id:'s_overclock',    name:'Overclock Core',   rarity:'epic',   el:'iron',   type:'buff', power:0, cd:3, cost:3, buff:{stat:'spd',pct:.25,turns:3}, icon:'⚙', desc:'Boosts own reaction speed.'},
+
+ {id:'s_worldbreaker', name:'Worldbreaker',     rarity:'mythic', el:'void',   type:'attack', power:2.6, cd:4, cost:4, icon:'✹', desc:'A devastating cross-realm strike.'},
+ {id:'s_convergence',  name:'Celestial Convergence', rarity:'mythic', el:'radiant', type:'buff', power:0, cd:4, cost:4, buff:{stat:'atk',pct:.25,turns:3}, shield:.15, icon:'✹', desc:'Aligns the stars in your favor.'},
+
+ // ---- DIVINE-tier signature skillset for The Grim Reaper ----
+ // Usable by any hero at Divine power, but bonded ("signatureHero") to grimreaper: on him
+ // every value below (damage, debuffs, lifesteal, buff/shield strength) is amplified ~55%.
+ {id:'s_soulharvest',  name:'Soul Harvest',     rarity:'divine', el:'void', type:'attack', power:1.65, cd:1, cost:2,
+   lifesteal:.42, icon:'☠', desc:'Reaps a portion of the target\'s life force.', signatureHero:'grimreaper'},
+ {id:'s_deathsgrasp',  name:"Death's Grasp",    rarity:'divine', el:'void', type:'attack', power:1.45, cd:2, cost:2,
+   debuff:{stat:'def',pct:-.22,turns:2}, icon:'☠', desc:'An icy grip that withers the target\'s defenses.', signatureHero:'grimreaper'},
+ {id:'s_reaperstoll',  name:"Reaper's Toll",    rarity:'divine', el:'void', type:'attack', power:1.85, cd:3, cost:3,
+   dot:{stat:'burn',pct:.10,turns:3}, icon:'☠', desc:'Marks the target for death, wounds lingering.', signatureHero:'grimreaper'},
+ {id:'s_harbingershroud', name:"Harbinger's Shroud", rarity:'divine', el:'void', type:'buff', power:0, cd:4, cost:3,
+   buff:{stat:'atk',pct:.24,turns:3}, shield:.24, icon:'☠', desc:'Cloaks the caster in a shroud of dread, guarding and empowering.', signatureHero:'grimreaper'},
+ {id:'s_endlessnight',  name:'Endless Night',   rarity:'divine', el:'void', type:'attack', power:2.35, cd:4, cost:4,
+   doubleHit:.30, icon:'☠', desc:'Plunges the battlefield into an unending dark, striking again and again.', signatureHero:'grimreaper'},
+ {id:'s_lastrites',     name:'Last Rites',      rarity:'divine', el:'void', type:'attack', power:1.35, cd:2, cost:3,
+   heal:.40, lifesteal:.20, icon:'☠', desc:'A final rite — strikes the foe while restoring the caster.', signatureHero:'grimreaper'},
+];
+
+/* ---- PROCEDURAL EXPANSION: generated heroes & skills (deterministic — identical every load) ---- */
+function pseudo(i){ const x=Math.sin(i*12.9898+78.233)*43758.5453; return x-Math.floor(x); }
+
+const GEN_NAME_A = ['Kor','Zeph','Dra','Myr','Sil','Thal','Ori','Vash','Nyx','Cor','Bael','Ilya','Ragn','Sol','Vel','Quen','Fen','Gorm','Aeli','Ust','Bryn','Cael','Dorn','Eska'];
+const GEN_NAME_B = ['ion','wyn','dral','ara','eth','oss','ivar','endra','orin','ashi','ulf','wen','tor','riel','ux','ande','rok','isha','ovan','ette','ai','orn','ys','und'];
+const GEN_TITLE = ['the Bold','Stormcaller','of the Deep','Ashblade','the Silent','Duskbringer','Ironheart','the Wanderer','Nightfall','the Unbroken','Sunwarden','the Cruel','Frosthollow','of Ember','the Vigilant','Grimward','the Radiant','Hollowmark','the Swift','Voidkin','the Grey','Emberfall','the Keen','Starbound'];
+
+function genCharacters(count){
+  const rarityCycle = ['common','rare','common','rare','epic','common','rare','legendary','common','rare','epic','common','mythic','rare','common','epic'];
+  const clsKeys = Object.keys(CLASSES);
+  const elKeys = Object.keys(ELEMENTS);
+  const out=[];
+  for(let i=0;i<count;i++){
+    const rarity = rarityCycle[i % rarityCycle.length];
+    const cls = clsKeys[i % clsKeys.length];
+    const el = elKeys[(i*3+1) % elKeys.length];
+    const nameA = GEN_NAME_A[i % GEN_NAME_A.length];
+    const nameB = GEN_NAME_B[(i*5+2) % GEN_NAME_B.length];
+    const title = GEN_TITLE[(i*7+3) % GEN_TITLE.length];
+    const name = nameA+nameB+' '+title;
+    const id = 'gc_'+i+'_'+nameA.toLowerCase()+nameB.toLowerCase();
+    const v = pseudo(i);
+    let hp=560, atk=58, def=38, spd=82, crit=8, critDmg=150;
+    if(cls==='warrior'){atk+=22;hp+=70;def+=8;}
+    else if(cls==='assassin'){spd+=30;crit+=14;atk+=10;def-=6;}
+    else if(cls==='guardian'){def+=34;hp+=150;spd-=8;atk-=4;}
+    else if(cls==='mage'){atk+=36;crit+=8;def-=6;}
+    else if(cls==='support'){def+=14;hp+=50;crit+=4;atk-=6;}
+    else if(cls==='reaper'){atk+=26;crit+=18;spd+=14;def-=10;}
+    hp = Math.round(hp+v*90);
+    atk = Math.round(atk+v*16);
+    def = Math.round(def+v*12);
+    spd = Math.round(spd+v*16);
+    crit = Math.round(crit+v*7);
+    critDmg = Math.round(critDmg+v*22);
+    out.push({id, name, rarity, cls, el, icon:CLASSES[cls].sym, base:{hp,atk,def,spd,crit,critDmg}});
+  }
+  return out;
+}
+CHAR_DEFS.push(...genCharacters(Math.max(0, 72-CHAR_DEFS.length)));
+
+const GEN_SKILL_ADJ = ['Ember','Frost','Storm','Void','Radiant','Iron','Blood','Shadow','Astral','Feral','Runic','Grave','Solar','Lunar','Chaos','Verdant','Wild','Silent','Molten','Glacier','Umbral','Sacred','Rift','Thunder'];
+const GEN_SKILL_NOUN = ['Strike','Slash','Burst','Wave','Nova','Fang','Edge','Pulse','Surge','Rend','Barrage','Cascade','Flare','Spiral','Thorn','Verdict','Requiem','Cry','Bloom','Shard','Echo','Vow','Bane','Ward'];
+const PASSIVE_KINDS = [
+  {key:'crit',    tail:'sharpens the senses, raising critical hit chance.'},
+  {key:'critDmg', tail:'channels raw ferocity, greatly raising critical damage.'},
+  {key:'atkPct',  tail:'grants sustained offensive power.'},
+  {key:'defPct',  tail:'hardens the body against harm.'},
+  {key:'spdPct',  tail:'quickens reflexes and initiative.'},
+  {key:'hpPct',   tail:"expands one's vital reserves."},
+];
+
+function genSkills(count){
+  const elKeys = Object.keys(ELEMENTS);
+  const rarKeys = ['common','rare','epic','legendary','mythic'];
+  const typeCycle = ['attack','attack','attack','heal','buff'];
+  const out=[];
+  for(let i=0;i<count;i++){
+    const el = elKeys[i % elKeys.length];
+    const rarity = rarKeys[Math.floor(i/elKeys.length) % rarKeys.length];
+    const rar = RARITY[rarity];
+    const adj = GEN_SKILL_ADJ[i % GEN_SKILL_ADJ.length];
+    const noun = GEN_SKILL_NOUN[(i*3+1) % GEN_SKILL_NOUN.length];
+    const name = adj+' '+noun;
+    const id = 'g_s_'+i+'_'+el;
+    if(i % 5 === 4){
+      const pk = PASSIVE_KINDS[Math.floor(i/5) % PASSIVE_KINDS.length];
+      let val;
+      if(pk.key==='crit') val = 4+rar.order*3;
+      else if(pk.key==='critDmg') val = 12+rar.order*11;
+      else val = 0.03+rar.order*0.025;
+      const passive = {}; passive[pk.key] = Math.round(val*100)/100;
+      out.push({id, name, rarity, el, type:'passive', power:0, cd:0, cost:0,
+        icon:ELEMENTS[el].sym, desc:'A dormant technique that '+pk.tail,
+        passive});
+      continue;
+    }
+    const type = typeCycle[i % typeCycle.length];
+    const sdef = {
+      id, name, rarity, el, type,
+      power: type==='heal'? Math.round((0.75+rar.order*0.22)*100)/100 : Math.round((1.05+rar.order*0.26)*100)/100,
+      cd: rar.order>=3?3:(rar.order>=1?1:0),
+      cost: 1+Math.min(3,rar.order),
+      icon: ELEMENTS[el].sym,
+      desc: 'A '+RARITY[rarity].label.toLowerCase()+' '+ELEMENTS[el].label.toLowerCase()+' technique.'
+    };
+    if(type==='attack'){
+      const mod = i % 4;
+      if(mod===0 && rar.order>=1) sdef.dot = {stat:'burn', pct:Math.round((.05+rar.order*.01)*100)/100, turns:3};
+      else if(mod===1 && rar.order>=1) sdef.debuff = {stat:(i%2===0?'atk':'def'), pct:-Math.round((.08+rar.order*.02)*100)/100, turns:2};
+      else if(mod===2 && rar.order>=2) sdef.doubleHit = Math.round((.22+rar.order*.03)*100)/100;
+      else if(mod===3 && rar.order>=2) sdef.lifesteal = Math.round((.18+rar.order*.03)*100)/100;
+    } else if(type==='buff'){
+      const buffStat = ['atk','def','spd'][i%3];
+      sdef.buff = {stat:buffStat, pct:Math.round((.12+rar.order*.03)*100)/100, turns:3};
+      if(rar.order>=3) sdef.shield = Math.round((.12+rar.order*.02)*100)/100;
+    }
+    out.push(sdef);
+  }
+  return out;
+}
+SKILL_DEFS.push(...genSkills(Math.max(0, 190-SKILL_DEFS.length)));
+
+const CRATE_DEFS = [
+ {id:'bronze', name:'Bronze Crate', icon:ICONS.crateBronze, currency:'gold', cost:600,
+   odds:{common:.62,rare:.28,epic:.085,legendary:.014,mythic:.0008,divine:.0002}, desc:'A basic supply crate. Common pulls likely.'},
+ {id:'silver', name:'Silver Cache', icon:ICONS.crateSilver, currency:'gem', cost:60,
+   odds:{common:.30,rare:.40,epic:.22,legendary:.07,mythic:.009,divine:.001}, desc:'Enhanced odds for rare and epic finds.'},
+ {id:'gold',   name:'Golden Reliquary', icon:ICONS.crateGold, currency:'gem', cost:180,
+   odds:{common:.08,rare:.27,epic:.40,legendary:.21,mythic:.035,divine:.005}, desc:'Premium vault, favors epic and legendary.'},
+ {id:'mythic', name:'Mythic Vault', icon:ICONS.crateMythic, currency:'gem', cost:480,
+   odds:{common:0,rare:.05,epic:.35,legendary:.45,mythic:.13,divine:.02}, desc:'Guaranteed epic or better. The best odds in the realm — including the highest chance anywhere to draw The Grim Reaper, at 2%.'},
+];
+
+const MATERIAL_DEFS = [
+ {id:'crystalCommon',    name:'Common Crystal',    icon:ICONS.matCommon, cost:40,  desc:'Levels common-tier heroes & skills.'},
+ {id:'crystalRare',      name:'Rare Crystal',      icon:ICONS.matRare, cost:110, desc:'Levels rare-tier heroes & skills.'},
+ {id:'crystalEpic',      name:'Epic Crystal',      icon:ICONS.matEpic, cost:260, desc:'Levels epic-tier heroes & skills.'},
+ {id:'crystalLegendary', name:'Legendary Crystal', icon:ICONS.matLegendary, cost:620, desc:'Levels legendary & mythic-tier gear.'},
+];
+
+/* ---------- TROPHY PATH ("Arena Road") ----------
+   Clash-Royale-style horizontal road of Arenas. Uses trophyBest (your all-time
+   high), so a losing streak never locks you back out of rewards already earned.
+   Each Arena's reward is claimed once. */
+const TROPHY_PATH = [
+ {t:150,   name:'Ashen Fields',      icon:'♨', gold:400,   gems:0,   crystal:null,              crystalAmt:0, chest:false},
+ {t:400,   name:'Iron Hollow',       icon:'⚙', gold:800,   gems:15,  crystal:'crystalCommon',   crystalAmt:4, chest:false},
+ {t:800,   name:'Frost Reach',       icon:'❄', gold:1300,  gems:30,  crystal:'crystalRare',     crystalAmt:2, chest:true },
+ {t:1400,  name:'Storm Peak',        icon:'↯', gold:2000,  gems:50,  crystal:'crystalRare',     crystalAmt:4, chest:false},
+ {t:2200,  name:'Void Rift',         icon:'◈', gold:3000,  gems:80,  crystal:'crystalEpic',     crystalAmt:3, chest:true },
+ {t:3200,  name:'Radiant Spire',     icon:'☀', gold:4500,  gems:120, crystal:'crystalEpic',     crystalAmt:5, chest:false},
+ {t:4500,  name:'Ember Wastes',      icon:'⚔', gold:6500,  gems:170, crystal:'crystalLegendary',crystalAmt:3, chest:true },
+ {t:6000,  name:'Shadow Citadel',    icon:'†', gold:9000,  gems:230, crystal:'crystalLegendary',crystalAmt:5, chest:false},
+ {t:8000,  name:'Runeforge Sanctum', icon:'✦', gold:13000, gems:320, crystal:'crystalLegendary',crystalAmt:8, chest:true },
+ {t:10000, name:'Eternal Throne',    icon:'☠', gold:20000, gems:500, crystal:'crystalLegendary',crystalAmt:15,chest:true },
+];
+
+/* ---------- DAILY LOGIN REWARDS ----------
+   A simple 7-day cycle; streak resets if a calendar day is missed. Day 7
+   always includes a free crate pull ("small chest"). */
+const DAILY_REWARDS = [
+ {day:1, gold:200,  gems:0,  chest:false},
+ {day:2, gold:350,  gems:5,  chest:false},
+ {day:3, gold:500,  gems:10, chest:false},
+ {day:4, gold:650,  gems:15, chest:false},
+ {day:5, gold:850,  gems:20, chest:false},
+ {day:6, gold:1050, gems:25, chest:false},
+ {day:7, gold:1500, gems:50, chest:true },
+];
+
+const STAR_CAP_LEVEL = [10,20,30,40,50]; // max level allowed per star index (0-based star-1..star5)
+const STAR_STAT_MULT = [1,1.16,1.36,1.62,1.95,2.4]; // index by star (1..5), index0 unused
+
+const BOT_PREFIX = ['Void','Iron','Ash','Storm','Null','Hex','Grim','Sol','Rime','Cinder','Rune','Vex'];
+const BOT_SUFFIX = ['Warden','Reaver','-9','Sentinel','Wraith','Harbinger','Marauder','Blade','Wisp','Bastion'];
+
+/* ---------- DEPTH SYSTEMS: elements, runes, talents ---------- */
+// Element wheel: each element beats exactly one other (Radiant and Void beat each other).
+const BEATS = {fire:'frost', frost:'storm', storm:'iron', iron:'fire', radiant:'void', void:'radiant'};
+function elemMult(atkEl, defEl){ if(BEATS[atkEl]===defEl) return 1.25; if(BEATS[defEl]===atkEl) return 0.85; return 1; }
+
+// Rune perks (imbues) - battle effects unlocked at rune tier 5
+const PERKS = {
+  exec:  {label:'Executioner', sym:'☠', desc:'+30% damage against targets under 35% HP.'},
+  vamp:  {label:'Vampiric',    sym:'🩸', desc:'Heal 10% of all damage you deal.'},
+  thorns:{label:'Thorns',      sym:'✷', desc:'Reflect 15% of damage you take.'},
+  ward:  {label:'Warding',     sym:'◈', desc:'Start the fight with a shield worth 18% max HP.'},
+  haste: {label:'Hastened',    sym:'⏩', desc:'Start the fight with +2 energy.'},
+  prec:  {label:'Precision',   sym:'◉', desc:'+40% critical damage.'},
+};
+const RUNE_DEFS = [
+  {id:'blade', label:'Blade Rune', sym:'⚔', desc:'Per tier: +6% ATK.',            perks:['exec','vamp']},
+  {id:'aegis', label:'Aegis Rune', sym:'🛡', desc:'Per tier: +6% HP, +4% DEF.',    perks:['thorns','ward']},
+  {id:'sigil', label:'Sigil Rune', sym:'✦', desc:'Per tier: +1.2 Crit, +2% SPD.', perks:['haste','prec']},
+];
+const RUNE_MAX = 10, PERK_TIER = 5;
+function runeCap(h){ return Math.min(RUNE_MAX, 2+2*h.star); }
+function runeCost(t){
+  const types=['crystalCommon','crystalCommon','crystalCommon','crystalRare','crystalRare','crystalRare','crystalEpic','crystalEpic','crystalEpic','crystalLegendary'];
+  return {gold:Math.round(180*Math.pow(t+1,1.55)), crystalType:types[t], crystals:2+t};
+}
+function getRunes(h){ if(!h.runes) h.runes = RUNE_DEFS.map(()=>({t:0,perk:null})); return h.runes; }
+function heroPerks(h){ return getRunes(h).filter(r=>r.t>=PERK_TIER && r.perk).map(r=>r.perk); }
+
+// Talents: 1 point per account level, not enough to max everything -> real choices
+const TALENTS = [
+  {id:'might',   tree:'Offense', label:'Might',       sym:'⚔', desc:'+2% ATK per rank', max:5},
+  {id:'ferocity',tree:'Offense', label:'Ferocity',    sym:'✸', desc:'+4% Crit Damage per rank', max:5},
+  {id:'swift',   tree:'Offense', label:'Swiftness',   sym:'↯', desc:'+1.5% SPD per rank', max:5},
+  {id:'vigor',   tree:'Defense', label:'Vigor',       sym:'♥', desc:'+2.5% HP per rank', max:5},
+  {id:'bulwark', tree:'Defense', label:'Bulwark',     sym:'🛡', desc:'+2.5% DEF per rank', max:5},
+  {id:'bond',    tree:'Defense', label:'Helper Bond', sym:'✚', desc:'+4% helper stat share and stronger assist strikes per rank', max:5},
+  {id:'greed',   tree:'Fortune', label:'Prospector',  sym:'◈', desc:'+6% battle gold per rank', max:5},
+  {id:'scholar', tree:'Fortune', label:'Scholar',     sym:'✶', desc:'+6% account XP per rank', max:5},
+  {id:'alchemy', tree:'Fortune', label:'Alchemy',     sym:'◆', desc:'+6% chance per rank of a bonus crystal on wins', max:5},
+];
+function tal(id){ return (S && S.talents && S.talents[id]) || 0; }
+
+// ---- BASE STAT TRAINING: account-wide, directly levelable core stats ----
+// Unlike Talents (limited points, choices) this is a dedicated gold sink per stat,
+// each with its own level track and cap, applied on top of everything else.
+const STAT_TRAIN_MAX = 25;
+const STAT_TRAIN_DEFS = [
+  {id:'atk',     label:'Attack',       sym:'⚔', unit:'pct', perLvl:1.4,  desc:'+1.4% ATK per level',            baseCost:90},
+  {id:'def',     label:'Defence',      sym:'🛡', unit:'pct', perLvl:1.4,  desc:'+1.4% DEF per level',            baseCost:85},
+  {id:'hp',      label:'HP',           sym:'♥', unit:'pct', perLvl:1.6,  desc:'+1.6% HP per level',             baseCost:80},
+  {id:'spd',     label:'Combat Speed', sym:'↯', unit:'pct', perLvl:0.9,  desc:'+0.9% Combat Speed per level — higher Combat Speed than your foe means you strike first',  baseCost:130},
+  {id:'crit',    label:'Crit Chance',  sym:'◉', unit:'flat', perLvl:0.35, desc:'+0.35% Crit Chance per level',   baseCost:150},
+  {id:'critDmg', label:'Crit Damage',  sym:'✸', unit:'flat', perLvl:2.2,  desc:'+2.2% Crit Damage per level',    baseCost:110},
+];
+function statTrainLvl(id){ return (S && S.statTraining && S.statTraining[id]) || 0; }
+function statTrainCost(id, lvl){
+  const d = STAT_TRAIN_DEFS.find(x=>x.id===id);
+  return Math.round(d.baseCost * Math.pow(lvl+1, 1.7));
+}
+function statTrainBonusPct(id){ // multiplier bonus (1 + x) for pct-type, flat points for flat-type
+  const d = STAT_TRAIN_DEFS.find(x=>x.id===id);
+  return d.perLvl * statTrainLvl(id);
+}
+
+
+/* =========================================================================
+   STATE
+========================================================================= */
+const SAVE_KEY = 'runeforge_arena_save_v1';
+let S = null;
+let pendingEncryptedSave = null; // {enc:true, salt, iv, data} awaiting a password to decrypt
+let accountPassword = null;      // held only in memory for this tab session, never itself saved
+
+/* =========================================================================
+   ACCOUNT SECURITY — client-side AES-GCM encryption of the save file.
+   Honest scope: this protects the save from casual copy/paste or opening the
+   file in a text editor, and lets you export a password-locked backup code.
+   It is NOT a server account system — anyone with your password AND your
+   device/browser can still open it, and there is no password recovery.
+========================================================================= */
+function b64FromBytes(bytes){ let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b)); return btoa(bin); }
+function bytesFromB64(b64){ const bin=atob(b64); const out=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) out[i]=bin.charCodeAt(i); return out; }
+async function deriveKey(password, saltBytes){
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:saltBytes, iterations:150000, hash:'SHA-256'},
+    keyMaterial, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']
+  );
+}
+async function encryptState(jsonStr, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, new TextEncoder().encode(jsonStr));
+  return {enc:true, salt:b64FromBytes(salt), iv:b64FromBytes(iv), data:b64FromBytes(new Uint8Array(ct))};
+}
+async function decryptState(env, password){
+  const salt = bytesFromB64(env.salt), iv = bytesFromB64(env.iv);
+  const key = await deriveKey(password, salt);
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv}, key, bytesFromB64(env.data));
+  return new TextDecoder().decode(pt);
+}
+async function unlockAccount(password){
+  try{
+    const json = await decryptState(pendingEncryptedSave, password);
+    S = JSON.parse(json);
+    normalizeState();
+    accountPassword = password;
+    pendingEncryptedSave = null;
+    return true;
+  }catch(e){ return false; }
+}
+
+function freshState(){
+  const starterDef = CHAR_DEFS.find(c=>c.id==='bront');
+  const starterSkill1 = SKILL_DEFS.find(s=>s.id==='s_shieldbash');
+  const starterSkill2 = SKILL_DEFS.find(s=>s.id==='s_fortify');
+  const heroIid = 'h_'+Date.now();
+  const sk1iid = 'sk_'+(Date.now()+1);
+  const sk2iid = 'sk_'+(Date.now()+2);
+  return {
+    gold: 1500,
+    gems: 220,
+    mats: {crystalCommon:20, crystalRare:4, crystalEpic:0, crystalLegendary:0},
+    shards: {}, // defId -> count (dupe currency, shared namespace char_/skill_ ids)
+    acctXp: 0,
+    acctLvl: 1,
+    battles: 0,
+    wins: 0,
+    activeHeroId: heroIid,
+    helperHeroId: null,
+    heroes: [
+      { iid: heroIid, defId:'bront', level:1, star:1, xp:0,
+        slots:[sk1iid, sk2iid, null,null,null,null] }
+    ],
+    skills: [
+      { iid: sk1iid, defId:'s_shieldbash', level:1, star:1 },
+      { iid: sk2iid, defId:'s_fortify', level:1, star:1 },
+    ],
+    currentBot: null,
+    lastResult: null,
+    talents:{}, trophies:100, trophyBest:100, trophyClaimed:[], lossStreak:0, infinite:false,
+    statTraining:{}, username:'', security:null, // security: {salt,iv} (base64) when account is password-protected
+    daily:{streak:0, lastClaim:null},
+  };
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(raw){
+      const wrapper = JSON.parse(raw);
+      if(wrapper && wrapper.enc){
+        // encrypted save — the caller (init flow) must decrypt via unlockAccount() before play begins
+        pendingEncryptedSave = wrapper;
+        S = freshState();
+        return;
+      }
+      S = wrapper;
+      normalizeState();
+      return;
+    }
+  }catch(e){}
+  S = freshState();
+  save();
+}
+function normalizeState(){
+  if(!S.mats) S.mats={crystalCommon:0,crystalRare:0,crystalEpic:0,crystalLegendary:0};
+  if(!S.shards) S.shards={};
+  if(S.helperHeroId===undefined) S.helperHeroId=null;
+  if(!S.talents) S.talents={};
+  if(S.trophies===undefined) S.trophies=100;
+  if(S.trophyBest===undefined) S.trophyBest=S.trophies;
+  if(!S.trophyClaimed) S.trophyClaimed=[];
+  if(!S.daily) S.daily={streak:0, lastClaim:null};
+  if(!S.lossStreak) S.lossStreak=0;
+  if(!S.statTraining) S.statTraining={};
+  if(S.username===undefined) S.username='';
+  if(S.security===undefined) S.security=null;
+}
+function save(){
+  if(S && S.infinite){ S.gold=999999999; S.gems=999999999; ['crystalCommon','crystalRare','crystalEpic','crystalLegendary'].forEach(k=>S.mats[k]=99999); }
+  try{
+    if(S.security && accountPassword){
+      encryptState(JSON.stringify(S), accountPassword).then(env=>{
+        try{ localStorage.setItem(SAVE_KEY, JSON.stringify(env)); }catch(e){}
+      });
+    } else {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(S));
+    }
+  }catch(e){}
+}
+
+/* =========================================================================
+   HELPERS: lookups
+========================================================================= */
+function charDef(defId){ return CHAR_DEFS.find(c=>c.id===defId); }
+function skillDef(defId){ return SKILL_DEFS.find(s=>s.id===defId); }
+function getHero(iid){ return S.heroes.find(h=>h.iid===iid); }
+function getSkillInst(iid){ return S.skills.find(s=>s.iid===iid); }
+function activeHero(){ return getHero(S.activeHeroId) || S.heroes[0]; }
+function rarityColor(rk){ return 'var(--c-'+rk+')'; }
+
+function fmtNum(n){
+  n = Math.round(n);
+  if(n>=1000000) return (n/1000000).toFixed(2)+'M';
+  if(n>=10000) return (n/1000).toFixed(1)+'k';
+  return n.toLocaleString('en-US');
+}
+
+/* =========================================================================
+   STAT COMPUTATION
+========================================================================= */
+function heroComputedStats(h){
+  const def = charDef(h.defId);
+  const rar = RARITY[def.rarity];
+  const starMult = STAR_STAT_MULT[h.star];
+  const lvlMult = 1 + (h.level-1)*0.085;
+  const globalBonus = 1 + globalAccountBonus();
+
+  let hp = def.base.hp * rar.mult * starMult * lvlMult * globalBonus;
+  let atk = def.base.atk * rar.mult * starMult * lvlMult * globalBonus;
+  let dfn = def.base.def * rar.mult * starMult * lvlMult * globalBonus;
+  let spd = def.base.spd * (1 + (h.star-1)*0.05) * (1+(h.level-1)*0.01);
+  let crit = def.base.crit;
+  let critDmg = def.base.critDmg;
+
+  // passive contributions from equipped skills (flat small stat boosts per skill, scaled by skill level/star)
+  const equipped = equippedSkills(h);
+  equipped.forEach(si=>{
+    if(!si) return;
+    const sd = skillDef(si.defId);
+    const p = skillPower(si);
+    // every equipped skill contributes a small passive stat trickle regardless of active use
+    atk *= 1 + 0.012*p.levelFactor;
+    hp  *= 1 + 0.008*p.levelFactor;
+    dfn *= 1 + 0.010*p.levelFactor;
+    // dedicated passive skills (e.g. crit chance / crit damage synergy pieces) add a scaling flat bonus
+    if(sd.passive){
+      const scale = 1 + p.levelFactor*0.035;
+      if(sd.passive.crit)      crit    += sd.passive.crit * scale;
+      if(sd.passive.critDmg)   critDmg += sd.passive.critDmg * scale;
+      if(sd.passive.atkPct)    atk     *= 1 + sd.passive.atkPct*scale;
+      if(sd.passive.defPct)    dfn     *= 1 + sd.passive.defPct*scale;
+      if(sd.passive.spdPct)    spd     *= 1 + sd.passive.spdPct*scale;
+      if(sd.passive.hpPct)     hp      *= 1 + sd.passive.hpPct*scale;
+    }
+  });
+
+  // class/element synergy bonus (see synergyReport)
+  const syn = synergyReport(h);
+  atk *= (1+syn.atkBonus);
+  dfn *= (1+syn.defBonus);
+  spd *= (1+syn.spdBonus);
+  crit += syn.critBonus*100;
+
+  // runes (per hero) and commander talents (account-wide)
+  const rn = getRunes(h);
+  atk *= 1+0.06*rn[0].t;
+  hp  *= 1+0.06*rn[1].t;  dfn *= 1+0.04*rn[1].t;
+  crit += 1.2*rn[2].t;    spd *= 1+0.02*rn[2].t;
+  atk *= 1+0.02*tal('might');  hp *= 1+0.025*tal('vigor');
+  dfn *= 1+0.025*tal('bulwark'); spd *= 1+0.015*tal('swift');
+  critDmg += 4*tal('ferocity');
+
+  // account-wide base stat training (see STAT_TRAIN_DEFS)
+  atk *= 1+statTrainBonusPct('atk')/100;
+  dfn *= 1+statTrainBonusPct('def')/100;
+  hp  *= 1+statTrainBonusPct('hp')/100;
+  spd *= 1+statTrainBonusPct('spd')/100;
+  crit += statTrainBonusPct('crit');
+  critDmg += statTrainBonusPct('critDmg');
+
+  return {
+    hp:Math.round(hp), atk:Math.round(atk), def:Math.round(dfn),
+    spd:Math.round(spd), crit:Math.min(75,Math.round(crit*10)/10),
+    critDmg:Math.round(critDmg)
+  };
+}
+
+function globalAccountBonus(){
+  return Math.min(0.5, (S.acctLvl-1)*0.006); // +0.6% per account level, capped 50%
+}
+
+function equippedSkills(h){
+  return h.slots.map(iid=> iid? getSkillInst(iid): null);
+}
+
+function skillPower(si){
+  if(!si) return {mult:0, levelFactor:0};
+  const sd = skillDef(si.defId);
+  const rar = RARITY[sd.rarity];
+  const starMult = STAR_STAT_MULT[si.star];
+  const lvlMult = 1 + (si.level-1)*0.05;
+  const levelFactor = (si.level-1) + (si.star-1)*4;
+  return { mult: sd.power * rar.mult * starMult * lvlMult * 0.62, levelFactor };
+}
+
+// counts equipped skills per element, returns bonuses
+function synergyReport(h){
+  const equipped = equippedSkills(h).filter(Boolean);
+  const def = charDef(h.defId);
+  const counts = {};
+  equipped.forEach(si=>{
+    const sd = skillDef(si.defId);
+    counts[sd.el] = (counts[sd.el]||0)+1;
+  });
+  let atkBonus=0, defBonus=0, spdBonus=0, critBonus=0;
+  const active = [];
+  Object.keys(counts).forEach(el=>{
+    const c = counts[el];
+    if(c>=2){
+      const tier = c>=3? 'major':'minor';
+      const dmgB = c>=3? .18:.08;
+      atkBonus += dmgB;
+      active.push({el, count:c, tier});
+    }
+  });
+  // class affinity: character's own element matches an active synergy element
+  let affinity=false;
+  if(counts[def.el] && counts[def.el]>=2){ atkBonus += .10; affinity=true; }
+  // guardian/support archetypes lean defense/speed from their own synergy too
+  if(def.cls==='guardian') defBonus += 0.05;
+  if(def.cls==='assassin') spdBonus += 0.05;
+  if(def.cls==='support') critBonus += 0.02;
+  if(def.cls==='reaper'){ critBonus += 0.06; atkBonus += 0.06; }
+
+  return {atkBonus, defBonus, spdBonus, critBonus, active, affinity, counts};
+}
+
+function heroPower(h){
+  const st = heroComputedStats(h);
+  return Math.round(st.hp*0.32 + st.atk*4.4 + st.def*3.6 + st.spd*2.1 + st.crit*6 + st.critDmg*0.9);
+}
+
+/* =========================================================================
+   PROGRESSIVE COSTS
+========================================================================= */
+function heroLevelCost(h){
+  const def = charDef(h.defId);
+  const rar = RARITY[def.rarity];
+  const gold = Math.round(60 * rar.mult * Math.pow(h.level, 1.62));
+  const crystals = Math.max(1, Math.ceil(h.level/3));
+  return {gold, crystalType: rar.crystal, crystals};
+}
+function skillLevelCost(si){
+  const sd = skillDef(si.defId);
+  const rar = RARITY[sd.rarity];
+  const gold = Math.round(35 * rar.mult * Math.pow(si.level, 1.55));
+  const crystals = Math.max(1, Math.ceil(si.level/2.4));
+  return {gold, crystalType: rar.crystal, crystals};
+}
+function starUpCost(rarity, star){ // star = current star (1-4 -> upgrading to star+1)
+  const rar = RARITY[rarity];
+  const shards = rar.shardsToStar[star-1];
+  const gold = Math.round(400 * rar.mult * Math.pow(star,1.9));
+  return {shards, gold};
+}
+function levelCapFor(star){ return STAR_CAP_LEVEL[star-1]; }
+
+/* =========================================================================
+   TOAST
+========================================================================= */
+let toastTimer=null;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+/* =========================================================================
+   RENDER: PORTRAIT / CARD BUILDERS
+========================================================================= */
+function starsHtml(star, max){
+  max = max||5;
+  let h='';
+  for(let i=0;i<max;i++){ h += `<span>${i<star?'★':'☆'}</span>`; }
+  return h;
+}
+function portraitEl(def, star, size, maxed){
+  const rar = RARITY[def.rarity];
+  return `<div class="portrait r-${def.rarity}${maxed?' maxed':''}" style="${size?`width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;`:''}"><span class="type-tag tag-hero">Hero</span>${def.icon}<div class="stars">${starsHtml(star)}</div></div>`;
+}
+function isHeroMaxed(h){ return h.star>=5 && h.level>=levelCapFor(h.star); }
+function isSkillMaxed(si){ return si.star>=5 && si.level>=levelCapFor(si.star); }
+
+/* =========================================================================
+   RENDER: HEROES PAGE
+========================================================================= */
+function renderHeroesPage(){
+  const h = activeHero();
+  const def = charDef(h.defId);
+  const st = heroComputedStats(h);
+  const pwr = heroPower(h);
+  const cap = levelCapFor(h.star);
+  const xpPct = Math.min(100, Math.round((h.level/cap)*100));
+
+  document.getElementById('heroCountSub').textContent = S.heroes.length + (S.heroes.length===1?' hero owned':' heroes owned');
+
+  const maxed = isHeroMaxed(h);
+  const card = document.getElementById('activeHeroCard');
+  card.className = 'card hero-hero r-'+def.rarity+(maxed?' maxed':'');
+  card.innerHTML = `
+    <div class="hero-top">
+      ${portraitEl(def,h.star,74,maxed)}
+      <div>
+        <div class="hero-name">${def.name} ${maxed?'<span class="max-badge">✦ MAXED</span>':''}</div>
+        <div class="hero-tags">
+          <span class="rarity-tag">${RARITY[def.rarity].label}</span>
+          <span class="tagchip">${CLASSES[def.cls].sym} ${CLASSES[def.cls].label}</span>
+          <span class="tagchip">${ELEMENTS[def.el].sym} ${ELEMENTS[def.el].label}</span>
+        </div>
+      </div>
+    </div>
+    <div class="power-line">Power <b>${fmtNum(pwr)}</b> &nbsp;·&nbsp; Lv.${h.level}/${cap} &nbsp;·&nbsp; ${h.star}★</div>
+    <div class="xpbar"><i style="width:${xpPct}%"></i></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="lbl">HP</div><div class="val">${fmtNum(st.hp)}</div></div>
+      <div class="stat-box"><div class="lbl">ATK</div><div class="val">${fmtNum(st.atk)}</div></div>
+      <div class="stat-box"><div class="lbl">DEF</div><div class="val">${fmtNum(st.def)}</div></div>
+      <div class="stat-box"><div class="lbl">SPD</div><div class="val">${fmtNum(st.spd)}</div></div>
+      <div class="stat-box"><div class="lbl">CRIT</div><div class="val">${st.crit}%</div></div>
+      <div class="stat-box"><div class="lbl">CRIT DMG</div><div class="val">${st.critDmg}%</div></div>
+    </div>
+  `;
+
+  renderSkillGrid(h);
+  renderSynergyBox(h);
+  renderRosterList();
+}
+
+function renderSkillGrid(h){
+  const grid = document.getElementById('skillGrid');
+  grid.innerHTML='';
+  for(let i=0;i<6;i++){
+    const iid = h.slots[i];
+    const si = iid? getSkillInst(iid): null;
+    const slot = document.createElement('div');
+    if(si){
+      const sd = skillDef(si.defId);
+      const maxed = isSkillMaxed(si);
+      slot.className = 'skill-slot filled r-'+sd.rarity+(maxed?' maxed':'');
+      slot.innerHTML = `<div class="sstars">${'★'.repeat(si.star)}</div><span class="type-tag tag-skill">Skill</span><div class="sic">${sd.icon}</div><div class="sname">${sd.name}</div><div class="slvl">${maxed?'MAX':'Lv'+si.level}</div>`;
+    } else {
+      slot.className = 'skill-slot empty';
+      slot.innerHTML = `<div class="plus">+</div><div class="sname">Empty</div>`;
+    }
+    slot.addEventListener('click', ()=>openSlotPicker(h,i));
+    grid.appendChild(slot);
+  }
+}
+
+function renderSynergyBox(h){
+  const box = document.getElementById('synergyBox');
+  const syn = synergyReport(h);
+  const def = charDef(h.defId);
+  let rows='';
+  if(syn.active.length===0){
+    rows = `<div class="synergy-row"><span>No active elemental synergy yet — equip 2+ skills sharing an element.</span></div>`;
+  } else {
+    syn.active.forEach(a=>{
+      const el = ELEMENTS[a.el];
+      rows += `<div class="synergy-row syn-active"><span class="syn-chip"><span class="dot" style="background:${el.color}"></span>${el.label} x${a.count}</span><b>${a.tier==='major'?'+18%':'+8%'} dmg</b></div>`;
+    });
+  }
+  if(syn.affinity){
+    rows += `<div class="synergy-row syn-active"><span>✶ Class Affinity (matches ${ELEMENTS[def.el].label})</span><b>+10% dmg</b></div>`;
+  }
+  box.innerHTML = `<div style="font-size:12px;font-weight:800;color:var(--bone);margin-bottom:4px;">Synergy Report</div>${rows}`;
+}
+
+function renderRosterList(){
+  const list = document.getElementById('rosterList');
+  list.innerHTML='';
+  const sorted = [...S.heroes].sort((a,b)=>heroPower(b)-heroPower(a));
+  sorted.forEach(h=>{
+    const def = charDef(h.defId);
+    const pwr = heroPower(h);
+    const item = document.createElement('div');
+    item.className = 'roster-item'+(h.iid===S.activeHeroId?' selected':'');
+    item.innerHTML = `
+      ${portraitEl(def,h.star,46)}
+      <div class="ri-info">
+        <div class="ri-name">${def.name} ${h.iid===S.activeHeroId?'<span class="ri-active-badge">ACTIVE</span>':''}</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(def.rarity)}">${RARITY[def.rarity].label}</span> · Lv.${h.level} · ${h.star}★</div>
+      </div>
+      <div class="ri-power">${fmtNum(pwr)}<div style="font-size:9px;color:var(--muted);font-weight:600;">POWER</div></div>
+    `;
+    item.addEventListener('click', ()=>{
+      S.activeHeroId = h.iid; save(); renderHeroesPage(); renderBattlePage(); toast('Active hero set: '+def.name);
+    });
+    list.appendChild(item);
+  });
+}
+function rarityColorRaw(rk){
+  const map = {common:'#9AA5B4',rare:'#4FA3E3',epic:'#B073F0',legendary:'#E0A94A',mythic:'#FF6B7A',divine:'#39FFB0'};
+  return map[rk];
+}
+
+/* Slot picker: choose from inventory skills (unequipped or currently equipped anywhere) */
+let pickerCtx = null;
+function openSlotPicker(h, slotIndex){
+  const owned = S.skills.slice().sort((a,b)=>{
+    const ra=RARITY[skillDef(a.defId).rarity].order, rb=RARITY[skillDef(b.defId).rarity].order;
+    return rb-ra || b.level-a.level;
+  });
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show';
+  overlay.style.zIndex='150';
+  const currentIid = h.slots[slotIndex];
+  let rowsHtml = owned.map(si=>{
+    const sd = skillDef(si.defId);
+    const equippedElsewhere = findEquippedLocation(si.iid);
+    const isHere = si.iid===currentIid;
+    return `<div class="roster-item" data-iid="${si.iid}" style="cursor:pointer;">
+      <div class="portrait r-${sd.rarity}" style="width:44px;height:44px;font-size:18px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+      <div class="ri-info">
+        <div class="ri-name">${sd.name}${isSkillMaxed(si)?' <span class="max-badge">MAX</span>':''}</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(sd.rarity)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}${equippedElsewhere&&!isHere?' · equipped elsewhere':''}${isHere?' · in this slot':''}</div>
+        <div class="ri-sub" style="margin-top:2px;">${skillEffectSummary(sd)}</div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty-hint">No skills owned yet — open crates in the Shop.</div>';
+
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:400px;">
+    <div class="detail-back" id="pickerClose">← Cancel</div>
+    <h3 class="display" style="font-size:17px;color:var(--bone);margin-bottom:8px;">Assign Skill · Slot ${slotIndex+1}</h3>
+    ${currentIid? `<button class="btn btn-ghost btn-block btn-sm" id="pickerUnequip" style="margin-bottom:10px;">Remove current skill</button>`:''}
+    <div style="max-height:50vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">${rowsHtml}</div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#pickerClose').addEventListener('click', ()=>overlay.remove());
+  const unq = overlay.querySelector('#pickerUnequip');
+  if(unq) unq.addEventListener('click', ()=>{ h.slots[slotIndex]=null; save(); renderHeroesPage(); overlay.remove(); });
+  overlay.querySelectorAll('[data-iid]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      const iid = row.getAttribute('data-iid');
+      // unequip from wherever it currently sits
+      S.heroes.forEach(hh=>{ hh.slots = hh.slots.map(x=> x===iid? null : x); });
+      h.slots[slotIndex] = iid;
+      save(); renderHeroesPage(); overlay.remove();
+      toast('Skill equipped');
+    });
+  });
+}
+function findEquippedLocation(iid){
+  for(const h of S.heroes){ if(h.slots.includes(iid)) return h.iid; }
+  return null;
+}
+
+/* =========================================================================
+   RENDER: UPGRADE PAGE
+========================================================================= */
+let upgSeg = 'hero';
+function renderUpgradePage(){
+  document.querySelectorAll('.seg-btn').forEach(b=>{ if(b.dataset.seg) b.classList.toggle('active', b.dataset.seg===upgSeg); });
+  ['hero','skills','runes','talents','stats'].forEach(k=>{
+    const el=document.getElementById('upg'+k[0].toUpperCase()+k.slice(1)+'Pane');
+    if(el) el.style.display = upgSeg===k?'block':'none';
+  });
+  if(upgSeg==='hero') renderUpgHero();
+  else if(upgSeg==='skills') renderUpgSkills();
+  else if(upgSeg==='runes') renderRunes();
+  else if(upgSeg==='stats') renderUpgStats();
+  else renderTalents();
+}
+
+function renderUpgStats(){
+  const pane = document.getElementById('upgStatsPane');
+  let html = `<div class="card" style="margin-top:10px;">
+    <div style="font-weight:800;font-size:13px;">Base Stat Training</div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Account-wide training — invest gold directly into your core stats. Applies to every hero, on top of Level, Star, Runes and Talents.</div>
+  </div>`;
+  html += STAT_TRAIN_DEFS.map(d=>{
+    const lvl = statTrainLvl(d.id);
+    const maxed = lvl>=STAT_TRAIN_MAX;
+    const cost = maxed? null : statTrainCost(d.id, lvl);
+    const have = cost!==null && S.gold>=cost;
+    const curVal = d.unit==='pct'? ('+'+(d.perLvl*lvl).toFixed(1)+'%') : ('+'+(d.perLvl*lvl).toFixed(2));
+    return `<div class="upgrade-row stat-train-row${maxed?' maxed':''}" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="portrait" style="--rc:var(--ember);width:48px;height:48px;font-size:20px;border-radius:12px;flex-shrink:0;">${d.sym}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="ur-name">${d.label} <span style="color:var(--muted);font-weight:600;">Lv.${lvl}/${STAT_TRAIN_MAX}</span>${maxed?' <span class="max-badge">MAXED</span>':''}</div>
+          <div class="ur-meta">${d.desc} · current bonus <b style="color:var(--good);">${curVal}</b></div>
+        </div>
+      </div>
+      <div class="cost-line">${maxed? `<span class="cost-chip">Fully trained</span>` : `<span class="cost-chip ${have?'':'bad'}">${ICONS.gold} ${fmtNum(cost)}</span>`}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:8px;" data-train="${d.id}" ${(maxed||!have)?'disabled':''}>${maxed?'Maxed':'Train +1'}</button>
+    </div>`;
+  }).join('');
+  pane.innerHTML = html;
+  pane.querySelectorAll('[data-train]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.getAttribute('data-train');
+      const lvl = statTrainLvl(id);
+      if(lvl>=STAT_TRAIN_MAX) return;
+      const cost = statTrainCost(id, lvl);
+      if(S.gold<cost) return;
+      S.gold -= cost;
+      S.statTraining[id] = lvl+1;
+      save(); renderUpgStats(); renderHeroesPage(); renderBattlePage(); renderTopbar();
+      toast(STAT_TRAIN_DEFS.find(d=>d.id===id).label+' trained to Lv.'+(lvl+1));
+    });
+  });
+}
+
+function renderRunes(){
+  const pane=document.getElementById('upgRunesPane');
+  const h=activeHero(), def=charDef(h.defId), rn=getRunes(h), cap=runeCap(h);
+  const rows=RUNE_DEFS.map((rd,i)=>{
+    const r=rn[i], can=r.t<cap, c=r.t<RUNE_MAX?runeCost(r.t):null;
+    const okG=c&&S.gold>=c.gold, okM=c&&(S.mats[c.crystalType]||0)>=c.crystals;
+    const perkRow = r.t>=PERK_TIER
+      ? `<div style="margin-top:10px;font-size:11.5px;color:var(--muted);">Imbue: choose one${r.perk?' (switching costs '+ICONS.gold+' 400)':''}</div>
+         <div class="seg-tabs" style="margin-top:4px;">${rd.perks.map(pk=>`<button class="seg-btn ${r.perk===pk?'active':''}" data-perk="${i}:${pk}">${PERKS[pk].sym} ${PERKS[pk].label}</button>`).join('')}</div>
+         <div class="matchup-note" style="margin-top:6px;">${r.perk?PERKS[r.perk].desc:'Pick an imbue to activate its battle effect.'}</div>`
+      : `<div style="font-size:11px;color:var(--muted);margin-top:8px;">Reach tier ${PERK_TIER} to unlock an imbue (a battle effect).</div>`;
+    return `<div class="card" style="margin-top:10px;">
+      <div style="display:flex;justify-content:space-between;font-weight:800;font-size:13px;"><span>${rd.sym} ${rd.label}</span><span>Tier ${r.t} / ${cap}</span></div>
+      <div style="font-size:11.5px;color:var(--muted);">${rd.desc}</div>
+      <div class="cost-line">${can? `<span class="cost-chip ${okG?'':'bad'}">${ICONS.gold} ${fmtNum(c.gold)}</span>${matPill(c.crystalType,c.crystals)}` : `<span class="cost-chip">${r.t>=RUNE_MAX?'Max tier':'Star Up this hero to raise the tier cap'}</span>`}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:8px;" data-rune="${i}" ${(!can||!okG||!okM)?'disabled':''}>Upgrade</button>
+      ${perkRow}</div>`;
+  }).join('');
+  pane.innerHTML = `<div class="upgrade-row">${portraitEl(def,h.star,52)}<div class="ur-info"><div class="ur-name">${def.name}</div><div class="ur-meta">Runes belong to this hero · tier cap ${cap} at ${h.star}★</div></div></div>`+rows;
+  pane.querySelectorAll('[data-rune]').forEach(b=>b.addEventListener('click',()=>{
+    const i=+b.dataset.rune, r=rn[i]; if(r.t>=runeCap(h)||r.t>=RUNE_MAX) return;
+    const c=runeCost(r.t);
+    if(S.gold<c.gold||(S.mats[c.crystalType]||0)<c.crystals) return;
+    S.gold-=c.gold; S.mats[c.crystalType]-=c.crystals; r.t++;
+    save(); renderRunes(); renderTopbar(); toast(RUNE_DEFS[i].label+' → tier '+r.t);
+  }));
+  pane.querySelectorAll('[data-perk]').forEach(b=>b.addEventListener('click',()=>{
+    const [i,pk]=b.dataset.perk.split(':'); const r=rn[+i]; if(r.perk===pk) return;
+    if(r.perk){ if(S.gold<400){ toast('Switching costs 400 gold'); return; } S.gold-=400; }
+    r.perk=pk; save(); renderRunes(); renderTopbar(); toast(PERKS[pk].label+' imbued');
+  }));
+}
+
+function talentSpent(){ return TALENTS.reduce((a,t)=>a+tal(t.id),0); }
+function renderTalents(){
+  const pane=document.getElementById('upgTalentsPane');
+  const free=S.acctLvl-talentSpent();
+  let html=`<div class="card" style="margin-top:10px;"><div style="display:flex;justify-content:space-between;font-weight:800;"><span>Talent Points</span><b style="color:var(--ember-soft);">${free} free</b></div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">1 point per account level. You can never max everything (${S.acctLvl} earned vs ${TALENTS.length*5} needed), so specialise.</div></div>`;
+  ['Offense','Defense','Fortune'].forEach(tr=>{
+    html+=`<div class="section-title" style="margin-top:14px;"><h2>${tr}</h2></div>`+TALENTS.filter(t=>t.tree===tr).map(t=>
+      `<div class="upgrade-row" style="margin-top:8px;"><div class="ur-info"><div class="ur-name">${t.sym} ${t.label} <span style="color:var(--muted);font-weight:600;">${tal(t.id)}/${t.max}</span></div><div class="ur-meta">${t.desc}</div></div>
+       <button class="btn btn-arcane btn-sm" data-tal="${t.id}" ${(free<=0||tal(t.id)>=t.max)?'disabled':''}>+1</button></div>`).join('');
+  });
+  html+=`<button class="btn btn-danger btn-block" style="margin-top:14px;" id="btnTalReset" ${talentSpent()?'':'disabled'}>Respec all talents (${ICONS.gold} 800)</button>`;
+  pane.innerHTML=html;
+  pane.querySelectorAll('[data-tal]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.tal; if(S.acctLvl-talentSpent()<=0||tal(id)>=5) return;
+    S.talents[id]=tal(id)+1; save(); renderTalents();
+  }));
+  document.getElementById('btnTalReset').addEventListener('click',()=>{
+    if(S.gold<800){ toast('Respec costs 800 gold'); return; }
+    S.gold-=800; S.talents={}; save(); renderTalents(); renderTopbar(); toast('Talents reset');
+  });
+}
+
+// Builds a human-readable, numbers-included summary of what a skill actually does in battle.
+function skillEffectSummary(sd){
+  const bits = [];
+  if(sd.type==='passive'){
+    if(sd.passive){
+      const [key,val] = Object.entries(sd.passive)[0];
+      const label = key==='crit'?'Crit Chance':key==='critDmg'?'Crit Damage':key==='atkPct'?'ATK':key==='defPct'?'DEF':key;
+      const isPct = key==='atkPct'||key==='defPct';
+      bits.push(`Passive: <b>+${isPct?Math.round(val*100):val}${isPct?'%':''}</b> ${label}`);
+    } else {
+      bits.push('Passive effect');
+    }
+    bits.push('Always active — no cooldown or energy cost');
+    if(sd.signatureHero) bits.push(`+55% power on its bonded hero`);
+    return bits.join(' · ');
+  }
+  if(sd.type==='attack') bits.push(`Damage: <b>${Math.round(sd.power*100)}%</b> ATK`);
+  else if(sd.type==='heal') bits.push(`Heal: <b>${Math.round(sd.power*100)}%</b> ATK + 2% Max HP`);
+  else if(sd.type==='buff' && !sd.buff && !sd.shield) bits.push('Support effect');
+  if(sd.dot) bits.push(`Burn: <b>${Math.round(sd.dot.pct*100)}%</b> Max HP / turn for ${sd.dot.turns} turns`);
+  if(sd.debuff){ const s=sd.debuff; bits.push(`Enemy ${s.stat.toUpperCase()} <b>${Math.round(s.pct*100)}%</b> for ${s.turns} turns`); }
+  if(sd.buff){ const s=sd.buff; bits.push(`Self ${s.stat.toUpperCase()} <b>+${Math.round(s.pct*100)}%</b> for ${s.turns} turns`); }
+  if(sd.shield) bits.push(`Shield: <b>${Math.round(sd.shield*100)}%</b> Max HP`);
+  if(sd.lifesteal) bits.push(`Lifesteal: <b>${Math.round(sd.lifesteal*100)}%</b> of damage dealt`);
+  if(sd.heal && sd.type==='attack') bits.push(`Self-heal: <b>${Math.round(sd.heal*100)}%</b> of damage`);
+  if(sd.doubleHit) bits.push(`<b>${Math.round(sd.doubleHit*100)}%</b> chance to strike twice`);
+  bits.push(`Cooldown: <b>${sd.cd}</b> turn${sd.cd===1?'':'s'}`, `Energy: <b>${sd.cost}</b>`);
+  if(sd.signatureHero) bits.push(`+55% power on its bonded hero`);
+  return bits.join(' · ');
+}
+// Passive stat trickle a specific owned instance of this skill contributes just by being equipped
+// (see heroComputedStats) — this is the part that actually scales with the skill's Level/Star.
+function skillTrickleSummary(si){
+  const p = skillPower(si);
+  const lf = p.levelFactor;
+  return `Equip bonus at current Lv.${si.level}/${si.star}★: <b>+${(1.2*lf).toFixed(1)}%</b> ATK, <b>+${(0.8*lf).toFixed(1)}%</b> HP, <b>+${(1.0*lf).toFixed(1)}%</b> DEF to its hero`;
+}
+
+function matPill(type, amt){
+  const md = MATERIAL_DEFS.find(m=>m.id===type);
+  return `<span class="cost-chip">${md.icon} ${amt} <span style="color:var(--muted);font-weight:600;">${md.name.split(' ')[0]}</span></span>`;
+}
+
+function renderUpgHero(){
+  const pane = document.getElementById('upgHeroPane');
+  const h = activeHero();
+  const def = charDef(h.defId);
+  const cap = levelCapFor(h.star);
+  const canLevel = h.level < cap;
+  const lc = heroLevelCost(h);
+  const haveGold = S.gold>=lc.gold;
+  const haveCrystal = (S.mats[lc.crystalType]||0) >= lc.crystals;
+
+  const canStar = h.star<5;
+  const su = canStar? starUpCost(def.rarity, h.star) : null;
+  const shardCount = S.shards[h.defId]||0;
+  const maxed = isHeroMaxed(h);
+
+  pane.innerHTML = `
+    <div class="upgrade-row${maxed?' maxed':''}">
+      ${portraitEl(def,h.star,52,maxed)}
+      <div class="ur-info">
+        <div class="ur-name">${def.name} ${maxed?'<span class="max-badge">✦ MAXED</span>':''}</div>
+        <div class="ur-meta">Lv.${h.level} / ${cap} cap · ${h.star}★ · Power ${fmtNum(heroPower(h))}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:10px;">
+      <div style="font-weight:800;font-size:13px;margin-bottom:2px;">Level Up</div>
+      <div style="font-size:11.5px;color:var(--muted);">Raise stats. Costs scale each level.</div>
+      <div class="cost-line">
+        ${canLevel? `<span class="cost-chip ${haveGold?'':'bad'}">${ICONS.gold} ${fmtNum(lc.gold)}</span>${matPill(lc.crystalType,lc.crystals)}` : `<span class="cost-chip">Cap reached — Star Up to raise cap</span>`}
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px;" id="btnLevelHero" ${(!canLevel||!haveGold||!haveCrystal)?'disabled':''}>
+        ${canLevel? 'Level Up':'Max for this Star'}
+      </button>
+    </div>
+    <div class="card" style="margin-top:10px;">
+      <div style="font-weight:800;font-size:13px;margin-bottom:2px;">Star Up ${canStar?('→ '+(h.star+1)+'★'):'(MAX)'}</div>
+      <div style="font-size:11.5px;color:var(--muted);">Requires duplicate Essence Shards from crate pulls. Dramatically boosts stats &amp; raises level cap.</div>
+      ${canStar? `
+      <div class="cost-line">
+        <span class="cost-chip ${shardCount>=su.shards?'':'bad'}">✦ ${shardCount}/${su.shards} Essence Shards</span>
+        <span class="cost-chip ${S.gold>=su.gold?'':'bad'}">${ICONS.gold} ${fmtNum(su.gold)}</span>
+      </div>
+      <button class="btn btn-arcane btn-block" style="margin-top:10px;" id="btnStarHero" ${(shardCount<su.shards||S.gold<su.gold)?'disabled':''}>Star Up</button>
+      `:'<div class="empty-hint">This hero has reached the maximum of 5 stars.</div>'}
+    </div>
+  `;
+  const lvBtn = document.getElementById('btnLevelHero');
+  if(lvBtn) lvBtn.addEventListener('click', ()=>{
+    if(!canLevel||!haveGold||!haveCrystal) return;
+    S.gold -= lc.gold; S.mats[lc.crystalType] -= lc.crystals;
+    h.level++; save(); renderUpgHero(); renderTopbar(); toast('Hero leveled to '+h.level);
+  });
+  const stBtn = document.getElementById('btnStarHero');
+  if(stBtn) stBtn.addEventListener('click', ()=>{
+    if(!canStar||shardCount<su.shards||S.gold<su.gold) return;
+    S.gold -= su.gold; S.shards[h.defId] -= su.shards; h.star++;
+    save(); renderUpgHero(); renderHeroesPage(); renderTopbar(); toast('★ Star Up! Now '+h.star+' stars');
+  });
+}
+
+function renderUpgSkills(){
+  const pane = document.getElementById('upgSkillsPane');
+  if(S.skills.length===0){ pane.innerHTML='<div class="empty-hint">No skills owned yet — open crates in the Shop.</div>'; return; }
+  const sorted = [...S.skills].sort((a,b)=> RARITY[skillDef(b.defId).rarity].order - RARITY[skillDef(a.defId).rarity].order || b.level-a.level);
+  pane.innerHTML = sorted.map(si=>{
+    const sd = skillDef(si.defId);
+    const cap = levelCapFor(si.star);
+    const canLevel = si.level<cap;
+    const lc = skillLevelCost(si);
+    const haveGold = S.gold>=lc.gold;
+    const haveCrystal = (S.mats[lc.crystalType]||0)>=lc.crystals;
+    const canStar = si.star<5;
+    const su = canStar? starUpCost(sd.rarity, si.star): null;
+    const shardCount = S.shards[si.defId]||0;
+    const loc = findEquippedLocation(si.iid);
+    const maxed = isSkillMaxed(si);
+    return `<div class="card${maxed?' maxed':''}" style="margin-top:10px;">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div class="portrait r-${sd.rarity}${maxed?' maxed':''}" style="width:48px;height:48px;font-size:20px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+        <div style="flex:1;">
+          <div class="ur-name">${sd.name} ${maxed?'<span class="max-badge">MAX</span>':''} ${loc?'<span style="font-size:9.5px;color:var(--good);font-weight:800;">EQUIPPED</span>':''}</div>
+          <div class="ur-meta">${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label} · Lv.${si.level}/${cap} · ${sd.type}</div>
+        </div>
+      </div>
+      <div class="matchup-note" style="text-align:left;margin-top:8px;">${skillEffectSummary(sd)}</div>
+      <div class="matchup-note" style="text-align:left;margin-top:4px;color:var(--muted-2);">${skillTrickleSummary(si)}</div>
+      <div class="cost-line">
+        ${canLevel? `<span class="cost-chip ${haveGold?'':'bad'}">${ICONS.gold} ${fmtNum(lc.gold)}</span>${matPill(lc.crystalType,lc.crystals)}` : `<span class="cost-chip">Level cap reached</span>`}
+      </div>
+      <div style="display:flex;gap:8px;margin-top:9px;">
+        <button class="btn btn-primary" style="flex:1;" data-lvl="${si.iid}" ${(!canLevel||!haveGold||!haveCrystal)?'disabled':''}>Level Up</button>
+        ${canStar? `<button class="btn btn-arcane" style="flex:1;" data-star="${si.iid}" ${(shardCount<su.shards||S.gold<su.gold)?'disabled':''}>★ Star (${shardCount}/${su.shards})</button>` : `<button class="btn btn-ghost" style="flex:1;" disabled>MAX ★</button>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  pane.querySelectorAll('[data-lvl]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const si = getSkillInst(btn.getAttribute('data-lvl'));
+      const cap = levelCapFor(si.star);
+      if(si.level>=cap) return;
+      const lc = skillLevelCost(si);
+      if(S.gold<lc.gold || (S.mats[lc.crystalType]||0)<lc.crystals) return;
+      S.gold -= lc.gold; S.mats[lc.crystalType]-=lc.crystals; si.level++;
+      save(); renderUpgSkills(); renderHeroesPage(); renderTopbar(); toast('Skill leveled to '+si.level);
+    });
+  });
+  pane.querySelectorAll('[data-star]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const si = getSkillInst(btn.getAttribute('data-star'));
+      const sd = skillDef(si.defId);
+      if(si.star>=5) return;
+      const su = starUpCost(sd.rarity, si.star);
+      const shardCount = S.shards[si.defId]||0;
+      if(shardCount<su.shards || S.gold<su.gold) return;
+      S.gold -= su.gold; S.shards[si.defId]-=su.shards; si.star++;
+      save(); renderUpgSkills(); renderHeroesPage(); renderTopbar(); toast('★ Skill starred up! Now '+si.star+' stars');
+    });
+  });
+}
+
+/* =========================================================================
+   RENDER: SHOP PAGE
+========================================================================= */
+function renderShopPage(){
+  const crateList = document.getElementById('crateList');
+  crateList.innerHTML = CRATE_DEFS.map(c=>{
+    const oddsHtml = Object.keys(c.odds).filter(k=>c.odds[k]>0).map(k=>
+      `<span class="odds-chip rarity-text" style="--rc:${rarityColorRaw(k)};border-color:${rarityColorRaw(k)}66;">${RARITY[k].label} ${(c.odds[k]*100).toFixed(1)}%</span>`
+    ).join('');
+    const curIcon = c.currency==='gold'?ICONS.gold:ICONS.gem;
+    const have = c.currency==='gold'? S.gold : S.gems;
+    const afford = have>=c.cost;
+    const topRarity = c.id==='mythic'?'mythic':(c.id==='gold'?'legendary':(c.id==='silver'?'epic':'rare'));
+    return `<div class="crate-card r-${topRarity}">
+      <div class="crate-top">
+        <div class="crate-icon">${c.icon}</div>
+        <div>
+          <div class="crate-name">${c.name}</div>
+          <div class="crate-desc">${c.desc}</div>
+        </div>
+      </div>
+      <div class="odds-row">${oddsHtml}</div>
+      <div class="crate-buy">
+        <button class="btn btn-primary" style="flex:1;" data-crate="${c.id}" data-n="1" ${afford?'':'disabled'}>Open ×1 — ${curIcon} ${fmtNum(c.cost)}</button>
+        <button class="btn btn-ghost" style="flex:1;" data-crate="${c.id}" data-n="10" ${have>=c.cost*10?'':'disabled'}>×10 — ${curIcon} ${fmtNum(c.cost*10)}</button>
+      </div>
+    </div>`;
+  }).join('');
+  crateList.querySelectorAll('[data-crate]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cid = btn.getAttribute('data-crate');
+      const n = parseInt(btn.getAttribute('data-n'),10);
+      openCrate(cid,n);
+    });
+  });
+
+  const matList = document.getElementById('matList');
+  matList.innerHTML = MATERIAL_DEFS.map(m=>{
+    const own = S.mats[m.id]||0;
+    const afford = S.gold>=m.cost;
+    return `<div class="mat-row">
+      <div class="mat-icon">${m.icon}</div>
+      <div class="mat-info">
+        <div class="mat-name">${m.name}</div>
+        <div class="mat-desc">${m.desc}</div>
+        <div class="mat-own">Owned: ${own}</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-mat="${m.id}" ${afford?'':'disabled'}>${ICONS.gold}${fmtNum(m.cost)}</button>
+    </div>`;
+  }).join('');
+  matList.querySelectorAll('[data-mat]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const mid = btn.getAttribute('data-mat');
+      const m = MATERIAL_DEFS.find(x=>x.id===mid);
+      if(S.gold<m.cost) return;
+      S.gold -= m.cost; S.mats[mid] = (S.mats[mid]||0)+1;
+      save(); renderShopPage(); renderTopbar(); toast('+1 '+m.name);
+    });
+  });
+}
+
+function weightedPick(odds){
+  const r = Math.random();
+  let acc=0;
+  const keys = Object.keys(odds);
+  for(const k of keys){ acc+=odds[k]; if(r<=acc) return k; }
+  return keys[keys.length-1];
+}
+
+function openCrate(cid, n){
+  const c = CRATE_DEFS.find(x=>x.id===cid);
+  const totalCost = c.cost*n;
+  const have = c.currency==='gold'? S.gold: S.gems;
+  if(have<totalCost) return;
+  if(c.currency==='gold') S.gold-=totalCost; else S.gems-=totalCost;
+
+  const pulls=[];
+  for(let i=0;i<n;i++){
+    const rarity = weightedPick(c.odds);
+    const isChar = Math.random()<0.4;
+    const pool = isChar? CHAR_DEFS.filter(d=>d.rarity===rarity) : SKILL_DEFS.filter(d=>d.rarity===rarity);
+    const fallbackPool = isChar? CHAR_DEFS: SKILL_DEFS;
+    const chosenDef = (pool.length? pool: fallbackPool)[Math.floor(Math.random()*(pool.length||fallbackPool.length))];
+    const kind = isChar? 'char':'skill';
+    pulls.push(grantPull(kind, chosenDef));
+  }
+  save();
+  showPullOverlay(pulls);
+  renderShopPage(); renderTopbar();
+}
+
+function grantPull(kind, def){
+  let isNew=false;
+  if(kind==='char'){
+    const owns = S.heroes.some(h=>h.defId===def.id);
+    if(!owns){
+      const iid='h_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+      S.heroes.push({iid, defId:def.id, level:1, star:1, xp:0, slots:[null,null,null,null,null,null]});
+      isNew=true;
+    } else {
+      S.shards[def.id] = (S.shards[def.id]||0) + 2;
+      S.gold += Math.round(80*RARITY[def.rarity].mult);
+    }
+  } else {
+    const owns = S.skills.some(s=>s.defId===def.id);
+    if(!owns){
+      const iid='sk_'+Date.now()+'_'+Math.floor(Math.random()*9999);
+      S.skills.push({iid, defId:def.id, level:1, star:1});
+      isNew=true;
+    } else {
+      S.shards[def.id] = (S.shards[def.id]||0) + 2;
+      S.gold += Math.round(50*RARITY[def.rarity].mult);
+    }
+  }
+  return {kind, def, isNew};
+}
+
+function showPullOverlay(pulls){
+  const overlay = document.getElementById('pullOverlay');
+  const stage = document.getElementById('pullStage');
+  stage.innerHTML='';
+  pulls.forEach((p,idx)=>{
+    const el = document.createElement('div');
+    el.className='pull-card r-'+p.def.rarity;
+    el.style.animationDelay = (idx*0.08)+'s';
+    const icon = p.kind==='char'? p.def.icon : p.def.icon;
+    const tag = p.kind==='char'? '<span class="type-tag tag-hero">Hero</span>' : '<span class="type-tag tag-skill">Skill</span>';
+    el.innerHTML = `${tag}<div class="pic">${icon}</div><div class="pn">${p.def.name}</div><div class="pr">${RARITY[p.def.rarity].label}</div><div class="pnew">${p.isNew? (p.kind==='char'?'NEW HERO':'NEW SKILL') : '+2 SHARDS'}</div>`;
+    stage.appendChild(el);
+  });
+  overlay.classList.add('show');
+}
+
+/* =========================================================================
+   RENDER: BATTLE PAGE + BOT GENERATION
+========================================================================= */
+function genBotName(){
+  const A=['Void','Iron','Ash','Storm','Null','Hex','Grim','Sol','Rime','Cinder','Rune','Vex','Nyx','Kael','Zeph','Drax'];
+  const B=['walker','blade','fang','ward','slayer','born','lord','wisp','hunter','king','reaper','mancer'];
+  const p=arr=>arr[Math.floor(Math.random()*arr.length)];
+  const a=p(A), b=p(B), r=Math.random();
+  if(r<.35) return a+b+Math.floor(Math.random()*99);
+  if(r<.6)  return a+'_'+b;
+  if(r<.8)  return 'xX'+a+b+'Xx';
+  return a.toLowerCase()+'.'+b+Math.floor(Math.random()*9);
+}
+const PERK_KEYS = Object.keys(PERKS);
+function estimateWin(h, bot, n){ let w=0; for(let i=0;i<n;i++) if(runBattle(h,bot).win) w++; return w/n; }
+
+// Hidden matchmaking: target win chance with gentle onboarding + mercy after losing streaks
+function targetWinrate(){
+  let t = 0.58;
+  const onboard = Math.max(0,(12-S.battles)/12);
+  t += (0.85-t)*onboard*0.6;
+  const ls = S.lossStreak||0;
+  if(ls>=2) t += Math.min(0.2, 0.07*(ls-1));
+  return Math.min(0.92, t);
+}
+// Bisect the bot's strength multiplier until simulated fights match the target win chance
+function calibrateBot(bot, h, target){
+  let lo=Math.log(0.12), hi=Math.log(9);
+  for(let i=0;i<8;i++){
+    const mid=(lo+hi)/2; bot.overdrive=Math.exp(mid);
+    if(estimateWin(h,bot,24)>target) lo=mid; else hi=mid;
+  }
+  bot.overdrive=Math.exp((lo+hi)/2);
+}
+
+function generateBot(targetPower, acctLvl){
+  acctLvl = acctLvl || S.acctLvl;
+  const h = activeHero();
+  let pool, maxOrd;
+  if(targetPower>40000){ pool=CHAR_DEFS.filter(c=>c.rarity==='mythic'||c.rarity==='legendary'); maxOrd=4; }
+  else if(targetPower>15000){ pool=CHAR_DEFS.filter(c=>c.rarity==='legendary'||c.rarity==='epic'); maxOrd=3; }
+  else if(targetPower>4000){ pool=CHAR_DEFS.filter(c=>c.rarity==='epic'||c.rarity==='rare'); maxOrd=2; }
+  else if(targetPower>1800){ pool=CHAR_DEFS.filter(c=>RARITY[c.rarity].order<=2); maxOrd=2; }
+  else { pool=CHAR_DEFS.filter(c=>RARITY[c.rarity].order<=1); maxOrd=1; }
+  if(pool.length===0) pool=CHAR_DEFS;
+  const def = pool[Math.floor(Math.random()*pool.length)];
+  const star = 1 + Math.min(4, Math.floor(Math.random()*3) + Math.floor(acctLvl/6));
+  const level = Math.max(1, Math.min(levelCapFor(star), Math.round(5+acctLvl*1.6)));
+
+  // kit size mirrors the player's loadout (+1 sometimes); skill rarity follows the power tier
+  const own = equippedSkills(h).filter(Boolean).length;
+  const skillCount = Math.max(1, Math.min(6, own + (Math.random()<0.4?1:0)));
+  const cand = SKILL_DEFS.filter(s=>s.type!=='passive' && RARITY[s.rarity].order<=maxOrd).sort(()=>Math.random()-0.5);
+  const chosen = cand.slice(0,skillCount);
+  if(!chosen.some(s=>s.type==='attack')){ const a=cand.find(s=>s.type==='attack'); if(a) chosen[0]=a; }
+
+  const perkCount = acctLvl>=14?2:(acctLvl>=6?1:0);
+  const perks = [...PERK_KEYS].sort(()=>Math.random()-0.5).slice(0,perkCount);
+
+  const bot = {
+    name: genBotName(), defId:def.id, def, star, level, overdrive:1, perks,
+    lvl: Math.max(1, acctLvl+Math.floor(Math.random()*5)-2),
+    trophies: Math.max(0, (S.trophies||0)+Math.round((Math.random()*2-1)*60)),
+    skills: chosen.map(sd=>({def:sd, level: Math.max(1, Math.min(levelCapFor(star), Math.round(level*0.7))), star: Math.max(1,Math.min(star, 1+Math.floor(Math.random()*star)))}))
+  };
+
+  // rough power fit so the bot looks sensible (level/star), then exact simulation-based calibration
+  const goalPower = Math.max(50, targetPower);
+  let g=0;
+  while(g<60){
+    const p = botPower(bot), d=(p-goalPower)/goalPower;
+    if(Math.abs(d)<0.05) break;
+    if(p<goalPower){ if(bot.level<levelCapFor(bot.star)) bot.level++; else if(bot.star<5) bot.star++; else break; }
+    else { if(bot.level>1) bot.level--; else if(bot.star>1) bot.star--; else break; }
+    g++;
+  }
+  calibrateBot(bot, h, targetWinrate());
+  return bot;
+}
+
+function botComputedStats(bot){
+  const rar = RARITY[bot.def.rarity];
+  const starMult = STAR_STAT_MULT[bot.star];
+  const lvlMult = 1+(bot.level-1)*0.085;
+  let hp=bot.def.base.hp*rar.mult*starMult*lvlMult;
+  let atk=bot.def.base.atk*rar.mult*starMult*lvlMult;
+  let dfn=bot.def.base.def*rar.mult*starMult*lvlMult;
+  let spd=bot.def.base.spd*(1+(bot.star-1)*0.05)*(1+(bot.level-1)*0.01);
+  let crit=bot.def.base.crit, critDmg=bot.def.base.critDmg;
+  bot.skills.forEach(si=>{
+    const lf=(si.level-1)+(si.star-1)*4;
+    atk*=1+0.012*lf; hp*=1+0.008*lf; dfn*=1+0.010*lf;
+    const sd = si.def;
+    if(sd.passive){
+      const scale = 1+lf*0.035;
+      if(sd.passive.crit)    crit    += sd.passive.crit*scale;
+      if(sd.passive.critDmg) critDmg += sd.passive.critDmg*scale;
+      if(sd.passive.atkPct)  atk     *= 1+sd.passive.atkPct*scale;
+      if(sd.passive.defPct)  dfn     *= 1+sd.passive.defPct*scale;
+      if(sd.passive.spdPct)  spd     *= 1+sd.passive.spdPct*scale;
+      if(sd.passive.hpPct)   hp      *= 1+sd.passive.hpPct*scale;
+    }
+  });
+  // simple elemental synergy for bots too
+  const counts={};
+  bot.skills.forEach(si=>counts[si.def.el]=(counts[si.def.el]||0)+1);
+  Object.keys(counts).forEach(el=>{ if(counts[el]>=2) atk*=1+(counts[el]>=3?.18:.08); });
+  // overdrive: smooth catch-up scaling once a bot is at its 5★/level-cap ceiling (see generateBot)
+  const od = bot.overdrive || 1;
+  hp*=od; atk*=od; dfn*=od;
+  return {hp:Math.round(hp),atk:Math.round(atk),def:Math.round(dfn),spd:Math.round(spd),crit:Math.min(75,crit),critDmg};
+}
+function botPower(bot){
+  const st = botComputedStats(bot);
+  return Math.round(st.hp*0.32+st.atk*4.4+st.def*3.6+st.spd*2.1+st.crit*6+st.critDmg*0.9);
+}
+
+function renderBattlePage(){
+  const h = activeHero();
+  const def = charDef(h.defId);
+  const pwr = combinedPower(h);
+  if(!S.currentBot) S.currentBot = generateBot(pwr, S.acctLvl);
+  const bot = S.currentBot;
+  const bp = botPower(bot);
+
+  const wr = Math.round(estimateWin(h,bot,40)*100);
+  const verdict = wr>=70?'Favored':(wr>=50?'Even fight':(wr>=35?'Risky':'Underdog'));
+  let elNote = 'No hero element edge (skill elements still count).';
+  if(elemMult(def.el,bot.def.el)>1) elNote = `<b>${ELEMENTS[def.el].label}</b> beats <b>${ELEMENTS[bot.def.el].label}</b>: +25% damage for you.`;
+  else if(elemMult(bot.def.el,def.el)>1) elNote = `<b>${ELEMENTS[bot.def.el].label}</b> beats your <b>${ELEMENTS[def.el].label}</b>: you deal -15%.`;
+  const perkTxt = (bot.perks&&bot.perks.length)? ' · '+bot.perks.map(p=>PERKS[p].sym+' '+PERKS[p].label).join(', ') : '';
+  const skillIcons = bot.skills.map(s=>s.def.icon).join(' ');
+  const oppLvl = bot.lvl||S.acctLvl, oppTr = bot.trophies!==undefined? bot.trophies : (S.trophies||0);
+  const pSpd = combinedStats(h).spd, bSpd = botComputedStats(bot).spd;
+  const speedNote = pSpd>=bSpd
+    ? `↯ You act first (Combat Speed ${fmtNum(pSpd)} vs ${fmtNum(bSpd)})`
+    : `↯ <b style="color:var(--bad);">${bot.name} acts first</b> — their Combat Speed (${fmtNum(bSpd)}) beats yours (${fmtNum(pSpd)}). Train Combat Speed in Forge → Stats.`;
+
+  const card = document.getElementById('matchCard');
+  card.className = 'card hero-hero r-'+def.rarity;
+  card.innerHTML = `
+    <div class="vs-wrap">
+      <div class="fighter">
+        ${portraitEl(def,h.star,64)}
+        <div class="fighter-name">You</div>
+        <div class="fighter-power">Lv.${S.acctLvl} · 🏆 ${fmtNum(S.trophies||0)}</div>
+        <div class="fighter-power">${ELEMENTS[def.el].sym} ${def.name} · PWR ${fmtNum(pwr)}</div>
+      </div>
+      <div class="vs-mid">VS</div>
+      <div class="fighter">
+        ${portraitEl(bot.def,bot.star,64)}
+        <div class="fighter-name">${bot.name}</div>
+        <div class="fighter-power">Lv.${oppLvl} · 🏆 ${fmtNum(oppTr)}</div>
+        <div class="fighter-power">${ELEMENTS[bot.def.el].sym} ${bot.def.name} · PWR ${fmtNum(bp)}</div>
+      </div>
+    </div>
+    <div class="matchup-note">Matchup: <b>${verdict}</b><br>${elNote}</div>
+    <div class="matchup-note" style="margin-top:6px;">${speedNote}</div>
+    <div class="matchup-note" style="margin-top:6px;">Their loadout: ${skillIcons}${perkTxt}</div>
+    <button class="btn btn-primary btn-block" style="margin-top:14px;" id="btnFindMatch">${ICONS.refresh} Find New Opponent</button>
+    <button class="btn btn-danger btn-block" style="margin-top:8px;" id="btnStartBattle">${ICONS.sword} Enter Battle</button>
+  `;
+  document.getElementById('btnFindMatch').addEventListener('click', ()=>{ S.currentBot=null; renderBattlePage(); });
+  document.getElementById('btnStartBattle').addEventListener('click', startBattleFlow);
+
+  renderHelperCard();
+  renderLastResultCard();
+  renderFriendDuelCard();
+  renderTrophyPathCard();
+}
+
+/* =========================================================================
+   TROPHY PATH ("Arena Road")
+========================================================================= */
+let tpathSelected = null; // index of the arena stop currently shown in the detail panel
+function renderTrophyPathCard(){
+  const card = document.getElementById('trophyPathCard');
+  if(!card) return;
+  const best = S.trophyBest||0;
+  const finalT = TROPHY_PATH[TROPHY_PATH.length-1].t;
+  const pct = Math.min(100, Math.round((best/finalT)*100));
+
+  // default the selected stop to the next unclaimed-but-reached one, else the next locked one
+  if(tpathSelected===null){
+    let idx = TROPHY_PATH.findIndex(m=>best>=m.t && !S.trophyClaimed.includes(m.t));
+    if(idx===-1) idx = TROPHY_PATH.findIndex(m=>best<m.t);
+    if(idx===-1) idx = TROPHY_PATH.length-1;
+    tpathSelected = idx;
+  }
+
+  let trackHtml = '';
+  TROPHY_PATH.forEach((m,i)=>{
+    const claimed = S.trophyClaimed.includes(m.t);
+    const reached = best>=m.t;
+    const state = claimed?'claimed':(reached?'claimable':'locked');
+    if(i>0){
+      const segDone = best>=TROPHY_PATH[i-1].t;
+      trackHtml += `<div class="tpath-seg ${segDone?'done':''}"></div>`;
+    }
+    trackHtml += `<div class="tpath-node ${state}${tpathSelected===i?' selected':''}" data-idx="${i}">
+      <div class="tpath-badge">
+        ${claimed?'<span class="tp-check">✓</span>':m.icon}
+        ${m.chest && !claimed?'<span class="tp-chest">🎁</span>':''}
+      </div>
+      <div class="tn-name">${m.name}</div>
+      <div class="tn-tro">🏆 ${fmtNum(m.t)}</div>
+    </div>`;
+  });
+
+  card.innerHTML = `
+    <div class="trophy-progress-wrap">
+      <div class="trophy-progress-label">🏆 ${fmtNum(best)}</div>
+      <div class="xpbar"><i style="width:${pct}%;background:linear-gradient(90deg,var(--ember),var(--ember-soft));"></i></div>
+      <div class="trophy-progress-label">${fmtNum(finalT)}</div>
+    </div>
+    <div class="tpath-scroll" id="tpathScroll"><div class="tpath-track">${trackHtml}</div></div>
+    <div class="tp-detail" id="tpDetail"></div>
+  `;
+  card.querySelectorAll('.tpath-node').forEach(n=>{
+    n.addEventListener('click', ()=>{ tpathSelected = parseInt(n.getAttribute('data-idx'),10); renderTrophyPathCard(); });
+  });
+  renderTpDetail();
+
+  // auto-scroll the road so the selected stop is in view
+  const scroller = document.getElementById('tpathScroll');
+  const selNode = card.querySelector('.tpath-node.selected');
+  if(scroller && selNode) scroller.scrollLeft = Math.max(0, selNode.offsetLeft - scroller.clientWidth/2 + selNode.clientWidth/2);
+}
+function renderTpDetail(){
+  const box = document.getElementById('tpDetail');
+  if(!box) return;
+  const m = TROPHY_PATH[tpathSelected];
+  const best = S.trophyBest||0;
+  const claimed = S.trophyClaimed.includes(m.t);
+  const reached = best>=m.t;
+  const rewardChips = [];
+  if(m.gold) rewardChips.push(`<span class="tp-reward-chip">${ICONS.gold} ${fmtNum(m.gold)}</span>`);
+  if(m.gems) rewardChips.push(`<span class="tp-reward-chip">${ICONS.gem} ${m.gems}</span>`);
+  if(m.crystal) rewardChips.push(`<span class="tp-reward-chip">${MATERIAL_DEFS.find(x=>x.id===m.crystal).icon} ${m.crystalAmt}</span>`);
+  if(m.chest) rewardChips.push(`<span class="tp-reward-chip">🎁 Chest</span>`);
+  box.innerHTML = `
+    <div class="tp-detail-top">
+      <div class="tp-detail-icon">${m.icon}</div>
+      <div>
+        <div class="tp-detail-name">${m.name}</div>
+        <div class="tp-detail-sub">${fmtNum(m.t)} Trophies ${claimed?'· claimed':(reached?'· ready to claim':'· '+fmtNum(m.t-best)+' to go')}</div>
+      </div>
+    </div>
+    <div class="tp-detail-rewards">${rewardChips.join('')}</div>
+    ${claimed
+      ? '<button class="btn btn-ghost btn-block btn-sm" style="margin-top:10px;" disabled>Already Claimed</button>'
+      : reached
+        ? `<button class="btn btn-primary btn-block btn-sm" style="margin-top:10px;" id="btnClaimArena">Claim Rewards</button>`
+        : `<button class="btn btn-ghost btn-block btn-sm" style="margin-top:10px;" disabled>Locked — reach ${fmtNum(m.t)} Trophies</button>`}
+  `;
+  const btn = document.getElementById('btnClaimArena');
+  if(btn) btn.addEventListener('click', ()=>claimTrophyMilestone(m.t));
+}
+
+function claimTrophyMilestone(t){
+  const m = TROPHY_PATH.find(x=>x.t===t);
+  if(!m || S.trophyClaimed.includes(t) || (S.trophyBest||0)<t) return;
+  S.gold += m.gold||0;
+  S.gems += m.gems||0;
+  if(m.crystal) S.mats[m.crystal] = (S.mats[m.crystal]||0)+m.crystalAmt;
+  S.trophyClaimed.push(t);
+  save();
+  renderTrophyPathCard(); renderTopbar();
+  toast(`🏆 ${m.name} claimed!`);
+  if(m.chest) freeChestPull();
+}
+
+/* =========================================================================
+   DAILY LOGIN REWARDS
+========================================================================= */
+function todayStr(){
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function daysBetween(a,b){
+  return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/86400000);
+}
+function checkDailyLogin(){
+  const today = todayStr();
+  if(S.daily.lastClaim===today) return; // already claimed today
+  let streak = S.daily.streak||0;
+  if(S.daily.lastClaim && daysBetween(S.daily.lastClaim, today)===1) streak+=1;
+  else streak = 1; // missed a day (or first-ever login) — restart the cycle
+  const cycleDay = ((streak-1)%7)+1;
+  showDailyRewardModal(cycleDay, streak);
+}
+function showDailyRewardModal(cycleDay, streak, alreadyClaimed){
+  const overlay = document.createElement('div');
+  overlay.className = 'result-overlay show';
+  overlay.style.zIndex = '200';
+  const cellsHtml = DAILY_REWARDS.map(r=>{
+    const done = r.day<cycleDay || (alreadyClaimed && r.day===cycleDay);
+    const isToday = r.day===cycleDay && !alreadyClaimed;
+    const val = r.chest? 'Chest' : (r.gems? `${ICONS.gold}${fmtNum(r.gold)}+${ICONS.gem}${r.gems}` : `${ICONS.gold}${fmtNum(r.gold)}`);
+    return `<div class="daily-cell ${done?'dc-done':''} ${isToday?'dc-today':''}">
+      <div class="dc-day">Day ${r.day}</div>
+      <div class="dc-ic">${r.chest?ICONS.crateBronze:(done?'✓':ICONS.gold)}</div>
+      <div class="dc-val">${val}</div>
+    </div>`;
+  }).join('');
+  overlay.innerHTML = `<div class="result-card" style="text-align:center;max-width:360px;">
+    <h3 class="display" style="font-size:19px;color:var(--bone);margin-bottom:2px;">Daily Reward</h3>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;">Streak: ${streak} day${streak===1?'':'s'} · come back daily to keep it going</div>
+    <div class="daily-grid">${cellsHtml}</div>
+    ${alreadyClaimed
+      ? '<button class="btn btn-ghost btn-block" id="btnCloseDaily">Already claimed today — come back tomorrow</button>'
+      : `<button class="btn btn-primary btn-block" id="btnClaimDaily">Claim Day ${cycleDay}</button>`}
+  </div>`;
+  document.body.appendChild(overlay);
+  const closeBtn = overlay.querySelector('#btnCloseDaily');
+  if(closeBtn) closeBtn.addEventListener('click', ()=>overlay.remove());
+  const claimBtn = overlay.querySelector('#btnClaimDaily');
+  if(claimBtn) claimBtn.addEventListener('click', ()=>{
+    claimDaily(cycleDay, streak);
+    overlay.remove();
+  });
+}
+function claimDaily(cycleDay, streak){
+  const r = DAILY_REWARDS.find(x=>x.day===cycleDay);
+  S.gold += r.gold||0;
+  S.gems += r.gems||0;
+  S.daily.streak = streak;
+  S.daily.lastClaim = todayStr();
+  save();
+  renderTopbar();
+  toast(`Daily reward claimed — Day ${cycleDay}!`);
+  if(r.chest) freeChestPull();
+}
+// A free, no-cost crate pull (bronze odds) used for trophy-path and daily-login chests.
+function freeChestPull(){
+  const c = CRATE_DEFS.find(x=>x.id==='bronze');
+  const rarity = weightedPick(c.odds);
+  const isChar = Math.random()<0.4;
+  const pool = isChar? CHAR_DEFS.filter(d=>d.rarity===rarity) : SKILL_DEFS.filter(d=>d.rarity===rarity);
+  const fallbackPool = isChar? CHAR_DEFS: SKILL_DEFS;
+  const chosenDef = (pool.length? pool: fallbackPool)[Math.floor(Math.random()*(pool.length||fallbackPool.length))];
+  const pull = grantPull(isChar?'char':'skill', chosenDef);
+  save();
+  showPullOverlay([pull]);
+}
+
+/* ---------- HELPER (2nd hero, contributes 70% of its stats) ---------- */
+const HELPER_CONTRIBUTION = 0.70;
+function renderHelperCard(){
+  const card = document.getElementById('helperCard');
+  if(!card) return;
+  const h = activeHero();
+  const candidates = S.heroes.filter(x=>x.iid!==h.iid);
+  if(candidates.length===0){
+    card.innerHTML = `<div class="empty-hint">Own a second hero to assign a Helper — it lends ${Math.round(HELPER_CONTRIBUTION*100)}% of its stats to your active hero in battle.</div>`;
+    return;
+  }
+  const helper = S.helperHeroId ? getHero(S.helperHeroId) : null;
+  let rowHtml;
+  if(helper){
+    const hd = charDef(helper.defId);
+    rowHtml = `<div class="roster-item selected">
+      ${portraitEl(hd,helper.star,46)}
+      <div class="ri-info">
+        <div class="ri-name">${hd.name} <span class="ri-active-badge">HELPER · ${Math.round(helperContribution(h,helper)*100)}%</span></div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(hd.rarity)}">${RARITY[hd.rarity].label}</span> · Lv.${helper.level} · ${helper.star}★</div>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="btnClearHelper">Remove</button>
+    </div>`;
+  } else {
+    rowHtml = `<div class="empty-hint" style="margin-bottom:8px;">No helper assigned. Choose a hero below to lend ${Math.round(HELPER_CONTRIBUTION*100)}% of its stats to your active hero.</div>`;
+  }
+  const pickList = candidates.filter(x=>x.iid!==S.helperHeroId).map(x=>{
+    const xd = charDef(x.defId);
+    return `<div class="roster-item" data-helper="${x.iid}">
+      ${portraitEl(xd,x.star,40)}
+      <div class="ri-info">
+        <div class="ri-name">${xd.name}</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(xd.rarity)}">${RARITY[xd.rarity].label}</span> · Lv.${x.level} · ${x.star}★ · PWR ${fmtNum(heroPower(x))}</div>
+      </div>
+    </div>`;
+  }).join('');
+  card.innerHTML = rowHtml + (pickList? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;">${pickList}</div>` : '');
+  const clearBtn = document.getElementById('btnClearHelper');
+  if(clearBtn) clearBtn.addEventListener('click', ()=>{ S.helperHeroId=null; save(); renderHelperCard(); renderBattlePage(); toast('Helper removed'); });
+  card.querySelectorAll('[data-helper]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      S.helperHeroId = row.getAttribute('data-helper'); save();
+      renderHelperCard(); renderBattlePage(); toast('Helper assigned');
+    });
+  });
+}
+
+/* =========================================================================
+   FRIEND DUEL — entirely local/browser: no server, no accounts on our side.
+   Each player exports a compact code describing their fully-computed current
+   stats + loadout; pasting a friend's code runs a real simulated fight using
+   both sides' actual numbers (level, star, runes, talents, stat training, etc).
+========================================================================= */
+function myFriendCode(){
+  const h = activeHero();
+  const def = charDef(h.defId);
+  const payload = {
+    v:1,
+    username: S.username || 'Commander',
+    heroName: def.name, heroIcon: def.icon, heroEl: def.el, heroRarity: def.rarity,
+    star: h.star,
+    stats: combinedStats(h),
+    skillDefIds: equippedSkills(h).filter(Boolean).map(si=>si.defId),
+    perks: heroPerks(h),
+  };
+  try{ return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))); }
+  catch(e){ return ''; }
+}
+function parseFriendCode(code){
+  try{ return JSON.parse(decodeURIComponent(escape(atob(code.trim())))); }
+  catch(e){ return null; }
+}
+function renderFriendDuelCard(){
+  const card = document.getElementById('friendDuelCard');
+  if(!card) return;
+  card.innerHTML = `
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Fight a friend's hero directly in the browser — send each other a code, no accounts or internet play needed. All stats (ATK, DEF, HP, Combat Speed, Crit) are used exactly as shown.</div>
+    <button class="btn btn-arcane btn-block" id="btnOpenFriendDuel">⚔ Start Friend Duel</button>
+  `;
+  document.getElementById('btnOpenFriendDuel').addEventListener('click', openFriendDuelModal);
+}
+function openFriendDuelModal(){
+  const h = activeHero();
+  if(equippedSkills(h).filter(Boolean).length===0){ toast('Equip at least one skill first!'); return; }
+  const myCode = myFriendCode();
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show';
+  overlay.style.zIndex='160';
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:420px;">
+    <div class="detail-back" id="fdClose">← Close</div>
+    <h3 class="display" style="font-size:17px;color:var(--bone);margin-bottom:10px;">Friend Duel</h3>
+    <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-bottom:5px;">1. Send your code to your friend</div>
+    <textarea class="friend-code-box" readonly>${myCode}</textarea>
+    <button class="btn btn-ghost btn-block btn-sm" id="fdCopy" style="margin-top:6px;">Copy My Code</button>
+    <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin:16px 0 5px;">2. Paste their code here</div>
+    <textarea class="friend-code-box" id="fdInput" placeholder="Paste friend's code..."></textarea>
+    <button class="btn btn-danger btn-block" id="fdFight" style="margin-top:10px;">${ICONS.sword} Fight!</button>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#fdClose').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#fdCopy').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(myCode); toast('Code copied'); }
+    catch(e){ const ta=overlay.querySelector('.friend-code-box'); ta.select(); document.execCommand('copy'); toast('Code copied'); }
+  });
+  overlay.querySelector('#fdFight').addEventListener('click', ()=>{
+    const raw = overlay.querySelector('#fdInput').value;
+    const data = parseFriendCode(raw);
+    if(!data || !data.stats){ toast('That code looks invalid'); return; }
+    overlay.remove();
+    startFriendBattleFlow(data);
+  });
+}
+function buildFriendCombatant(data){
+  const def = {id:'friend', name:data.heroName||'Friend', icon:data.heroIcon||'⚔', el:data.heroEl||'iron', rarity:data.heroRarity||'common', cls:'friend'};
+  const st = Object.assign({hp:500,atk:50,def:30,spd:80,crit:5,critDmg:150}, data.stats||{});
+  const skills = (data.skillDefIds||[]).map(id=>{ const sd=skillDef(id); return sd? {def:sd, cdLeft:0} : null; }).filter(Boolean);
+  const perks = data.perks||[];
+  const c = {side:'enemy', name:data.username||def.name, def, star:data.star||1, base:Object.assign({},st),
+    hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?2:0, statuses:[], skills, basicPower:0.9, perks, assist:null};
+  if(perks.includes('prec')) c.base.critDmg += 40;
+  if(perks.includes('ward')) c.statuses.push({type:'shield', amount:Math.round(st.hp*0.18), turnsLeft:99});
+  return c;
+}
+function startFriendBattleFlow(data){
+  if(battleInProgress) return;
+  const h = activeHero();
+  battleInProgress = true;
+  const player = buildCombatant('player', h, null);
+  const enemy = buildFriendCombatant(data);
+  const result = simulateFight(player, enemy);
+  renderArenaShell(h, {def:enemy.def, name:enemy.name}, result);
+  playbackLog(result, ()=>finishFriendBattle(result, data));
+}
+function finishFriendBattle(result, data){
+  battleInProgress = false;
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show';
+  overlay.innerHTML = `<div class="result-card">
+    <div class="result-title ${result.win?'win':'lose'}" style="font-size:22px;">${result.win?'VICTORY':'DEFEAT'}</div>
+    <div class="result-sub">vs ${data.username||data.heroName} · ${result.round} rounds · your HP left ${result.hpPct}%</div>
+    <div class="matchup-note" style="margin-top:14px;">Friend duels are for bragging rights only — no gold, XP or trophies are awarded.</div>
+    <button class="btn btn-primary btn-block" style="margin-top:18px;" id="fdResultClose">Continue</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#fdResultClose').addEventListener('click', ()=>{ overlay.remove(); renderAll(); });
+}
+
+function combinedPower(h){
+  const st = combinedStats(h);
+  return Math.round(st.hp*0.32 + st.atk*4.4 + st.def*3.6 + st.spd*2.1 + st.crit*6 + st.critDmg*0.9);
+}
+function helperContribution(h, helper){
+  let c = HELPER_CONTRIBUTION + 0.04*tal('bond');
+  const a=charDef(h.defId), b=charDef(helper.defId);
+  if(a.el===b.el) c += 0.10;   // same element
+  if(a.cls===b.cls) c += 0.05; // same class
+  return c;
+}
+function combinedStats(h){
+  const base = heroComputedStats(h);
+  const helper = (S.helperHeroId && getHero(S.helperHeroId)) ? getHero(S.helperHeroId) : null;
+  if(!helper) return base;
+  const hs = heroComputedStats(helper), c = helperContribution(h,helper);
+  return {
+    hp: Math.round(base.hp + hs.hp*c),
+    atk: Math.round(base.atk + hs.atk*c),
+    def: Math.round(base.def + hs.def*c),
+    spd: Math.round(base.spd + hs.spd*c*0.4),
+    crit: Math.min(75, Math.round((base.crit + hs.crit*c*0.5)*10)/10),
+    critDmg: Math.round(base.critDmg + hs.critDmg*c*0.3)
+  };
+}
+
+function renderLastResultCard(){
+  const card = document.getElementById('lastResultCard');
+  if(!S.lastResult){ card.innerHTML = '<div class="empty-hint">No battles fought yet. Enter the arena to begin your legend.</div>'; return; }
+  const r = S.lastResult;
+  card.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-weight:800;font-size:14px;color:${r.win?'var(--good)':'var(--bad)'};">${r.win?'VICTORY':'DEFEAT'} vs ${r.botName}</div>
+      <div style="font-family:'Cinzel',serif;font-weight:800;color:var(--ember-soft);font-size:20px;">${r.rank}</div>
+    </div>
+    <div style="font-size:11.5px;color:var(--muted);margin-top:4px;">${r.rounds} rounds · your HP left ${r.hpPct}%</div>
+    <div class="cost-line" style="margin-top:8px;">
+      <span class="cost-chip">${ICONS.gold} +${fmtNum(r.gold)}</span>
+      <span class="cost-chip">${ICONS.xp} +${r.xp} XP</span>
+      ${r.trophies!==undefined?`<span class="cost-chip">🏆 ${r.trophies>=0?'+':''}${r.trophies}</span>`:''}
+      ${r.crystals? matPill(r.crystalType, r.crystals):''}
+      ${r.gems? `<span class="cost-chip">${ICONS.gem} +${r.gems}</span>`:''}
+    </div>
+  `;
+}
+
+/* =========================================================================
+   BATTLE ENGINE
+========================================================================= */
+function buildCombatant(side, h, bot){
+  let def, st, skills, perks, name, star, assist=null;
+  if(side==='player'){
+    def = charDef(h.defId); st = Object.assign({}, combinedStats(h));
+    skills = equippedSkills(h).filter(Boolean).map(si=>({inst:si, def:skillDef(si.defId), cdLeft:0}));
+    perks = heroPerks(h); name = def.name; star = h.star;
+    const helper = (S.helperHeroId && getHero(S.helperHeroId)) ? getHero(S.helperHeroId) : null;
+    if(helper){ const hs=heroComputedStats(helper), hd=charDef(helper.defId); assist={atk:hs.atk*(0.9+0.05*tal('bond')), el:hd.el, name:hd.name}; }
+  } else {
+    def = bot.def; st = Object.assign({}, botComputedStats(bot));
+    skills = bot.skills.map(si=>({inst:si, def:si.def, cdLeft:0}));
+    perks = bot.perks||[]; name = bot.name; star = bot.star;
+  }
+  st.hp = Math.round(st.hp);
+  if(perks.includes('prec')) st.critDmg += 40;
+  const c = {side, name, def, star, base:st, hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?2:0,
+    statuses:[], skills, basicPower:0.9, perks, assist};
+  if(perks.includes('ward')) c.statuses.push({type:'shield', amount:Math.round(st.hp*0.18), turnsLeft:99});
+  return c;
+}
+
+function statusMultiplier(c, stat){
+  let mult=1;
+  c.statuses.filter(s=>s.stat===stat).forEach(s=> mult *= (1+s.pct));
+  return mult;
+}
+function effAtk(c){ return c.base.atk*statusMultiplier(c,'atk'); }
+function effDef(c){ return c.base.def*statusMultiplier(c,'def'); }
+function effSpd(c){ return c.base.spd*statusMultiplier(c,'spd'); }
+
+function tickStatuses(c, log){
+  c.statuses.forEach(s=>{
+    if(s.stat==='burn' && s.turnsLeft>0){
+      const dmg = Math.max(1, Math.round(c.maxHp*s.pct));
+      c.hp = Math.max(0, c.hp-dmg);
+      log.push({type:'dot', actor:c.side, dmg, label:'Burn'});
+    }
+  });
+  c.statuses.forEach(s=>{ s.turnsLeft--; });
+  c.statuses = c.statuses.filter(s=>s.turnsLeft>0);
+}
+
+// skills fire in slot order: the order of your loadout is your priority list
+function pickSkill(c){
+  for(const sk of c.skills){
+    if(sk.def.type==='passive') continue;
+    if(sk.cdLeft<=0 && c.energy>=sk.def.cost){ return sk; }
+  }
+  return null;
+}
+
+function runBattle(h, bot){
+  return simulateFight(buildCombatant('player', h, bot), buildCombatant('enemy', null, bot));
+}
+function simulateFight(player, enemy){
+  const log = [];
+  const MAX_ROUNDS = 22;
+  let round=0;
+
+  function computeDamage(attacker, target, mult, canCrit, el){
+    let dmg = Math.max(1, effAtk(attacker)*mult - effDef(target)*0.5);
+    dmg *= elemMult(el||attacker.def.el, target.def.el);
+    if(attacker.perks.includes('exec') && target.hp/target.maxHp<0.35) dmg *= 1.3;
+    let crit=false;
+    if(canCrit && Math.random()*100 < (attacker.base.crit||0)){
+      crit=true; dmg *= (1+(attacker.base.critDmg||150)/100);
+    }
+    let shieldAbs=0;
+    const shield = target.statuses.find(s=>s.type==='shield');
+    if(shield){
+      shieldAbs = Math.min(shield.amount, dmg);
+      shield.amount -= shieldAbs;
+      dmg -= shieldAbs;
+      if(shield.amount<=0) target.statuses = target.statuses.filter(s=>s!==shield);
+    }
+    dmg = Math.round(Math.max(shieldAbs>0? 0:1, dmg));
+    target.hp = Math.max(0, target.hp-dmg);
+    return {dmg, crit, shieldAbs};
+  }
+  // rune perks that trigger after a hit: Vampiric (heal) and Thorns (reflect)
+  function afterHit(a, t, dmg){
+    if(dmg<=0) return;
+    if(a.perks.includes('vamp') && a.hp>0){
+      const hl = Math.max(1, Math.round(dmg*0.10));
+      a.hp = Math.min(a.maxHp, a.hp+hl);
+      log.push({type:'heal', actor:a.side, actorName:a.name, dmg:hl, skillName:'Vampiric'});
+    }
+    if(t.perks.includes('thorns')){
+      const rf = Math.max(1, Math.round(dmg*0.15));
+      a.hp = Math.max(0, a.hp-rf);
+      log.push({type:'dot', actor:a.side, dmg:rf, label:'Thorns'});
+    }
+  }
+
+  function act(attacker, target){
+    attacker.energy = Math.min(5, attacker.energy+1);
+    tickStatuses(attacker, log);
+    if(attacker.hp<=0) return;
+    const sk = pickSkill(attacker);
+    if(!sk){
+      const r = computeDamage(attacker, target, attacker.basicPower, true, attacker.def.el);
+      log.push({type:'basic', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:r.dmg, crit:r.crit, skillName:'Basic Strike'});
+      afterHit(attacker, target, r.dmg);
+      return;
+    }
+    sk.cdLeft = sk.def.cd+1;
+    attacker.energy -= sk.def.cost;
+    const sd = sk.def;
+    // Signature bond: a divine skill cast by its bonded hero (e.g. Grim Reaper) is amplified.
+    const sig = (sd.signatureHero && attacker.def.id===sd.signatureHero) ? 1.55 : 1;
+    if(sd.type==='attack'){
+      let hits=1;
+      if(sd.doubleHit && Math.random()<Math.min(0.95, sd.doubleHit*sig)) hits=2;
+      let totalDmg=0, anyCrit=false;
+      for(let i=0;i<hits;i++){
+        const r = computeDamage(attacker, target, sd.power*sig, true, sd.el);
+        totalDmg+=r.dmg; anyCrit = anyCrit||r.crit;
+      }
+      log.push({type:'skill', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:totalDmg, crit:anyCrit, skillName:sd.name, hits});
+      afterHit(attacker, target, totalDmg);
+      if(sd.dot){ target.statuses.push({stat:'burn', pct:sd.dot.pct*sig, turnsLeft:sd.dot.turns, type:'dot'}); }
+      if(sd.debuff){ target.statuses.push({stat:sd.debuff.stat, pct:sd.debuff.pct*sig, turnsLeft:sd.debuff.turns, type:'debuff'}); }
+      if(sd.lifesteal){ const heal=Math.round(totalDmg*Math.min(0.9,sd.lifesteal*sig)); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:'Siphon'}); }
+      if(sd.heal){ const heal=Math.round(effAtk(attacker)*sd.heal*sig); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name}); }
+    } else if(sd.type==='heal'){
+      const heal = Math.round(attacker.maxHp*0.02 + effAtk(attacker)*sd.power*sig);
+      attacker.hp = Math.min(attacker.maxHp, attacker.hp+heal);
+      log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name});
+    } else if(sd.type==='buff'){
+      if(sd.buff) attacker.statuses.push({stat:sd.buff.stat, pct:sd.buff.pct*sig, turnsLeft:sd.buff.turns, type:'buff'});
+      if(sd.shield){ attacker.statuses.push({type:'shield', amount:Math.round(attacker.maxHp*sd.shield*sig), turnsLeft:99}); }
+      log.push({type:'buff', actor:attacker.side, actorName:attacker.name, skillName:sd.name});
+    }
+  }
+
+  while(round<MAX_ROUNDS && player.hp>0 && enemy.hp>0){
+    round++;
+    const order = effSpd(player) >= effSpd(enemy) ? [player,enemy] : [enemy,player];
+    order.forEach(actor=>{
+      if(player.hp<=0||enemy.hp<=0) return;
+      act(actor, actor===player? enemy: player);
+    });
+    // helper assist strike every 3rd round
+    if(player.assist && round%3===0 && player.hp>0 && enemy.hp>0){
+      const ps = {base:{atk:player.assist.atk, crit:8, critDmg:150}, statuses:[], perks:[], def:{el:player.assist.el}};
+      const r = computeDamage(ps, enemy, 1.0, true, player.assist.el);
+      log.push({type:'skill', actor:'player', actorName:player.name, target:'enemy', dmg:r.dmg, crit:r.crit, skillName:'Assist: '+player.assist.name, hits:1});
+    }
+    player.skills.forEach(s=>s.cdLeft=Math.max(0,s.cdLeft-1));
+    enemy.skills.forEach(s=>s.cdLeft=Math.max(0,s.cdLeft-1));
+  }
+
+  const win = player.hp>0 && (enemy.hp<=0 || player.hp/player.maxHp > enemy.hp/enemy.maxHp);
+  return {log, player, enemy, round, win, hpPct: Math.round(Math.max(0,player.hp)/player.maxHp*100)};
+}
+
+function computeRank(result){
+  if(!result.win) return {rank:'D', label:'Defeat'};
+  const hpPct = result.hpPct;
+  const rounds = result.round;
+  let score = hpPct - rounds*1.2;
+  if(score>55) return {rank:'S', label:'Flawless victory'};
+  if(score>30) return {rank:'A', label:'Dominant win'};
+  if(score>10) return {rank:'B', label:'Solid win'};
+  return {rank:'C', label:'Narrow win'};
+}
+
+/* =========================================================================
+   BATTLE PLAYBACK (UI)
+========================================================================= */
+let battleInProgress=false;
+function startBattleFlow(){
+  if(battleInProgress) return;
+  const h = activeHero();
+  if(equippedSkills(h).filter(Boolean).length===0){
+    toast('Equip at least one skill before battling!');
+    return;
+  }
+  battleInProgress=true;
+  const bot = S.currentBot;
+  const result = runBattle(h, bot);
+  renderArenaShell(h, bot, result);
+  playbackLog(result);
+}
+
+function renderArenaShell(h, bot, result){
+  const def = charDef(h.defId);
+  const card = document.getElementById('matchCard');
+  card.innerHTML = `
+    <div class="arena" id="arenaBox">
+      <button class="btn btn-ghost btn-sm skip-btn" id="btnSkipBattle">Skip ▶▶</button>
+      <div class="combatant" id="c_player">
+        <div class="c-head"><div class="c-portrait r-${def.rarity}">${def.icon}</div><div class="c-name">${def.name}<br><small>YOU</small></div></div>
+        <div class="hpbar-wrap"><div class="hpbar" id="hp_player" style="width:100%"></div><div class="hp-text" id="hpt_player">${result.player.maxHp}/${result.player.maxHp}</div></div>
+        <div class="energy-dots" id="en_player"></div>
+        <div class="status-row" id="st_player"></div>
+      </div>
+      <div class="combatant" id="c_enemy">
+        <div class="c-head"><div class="c-portrait r-${bot.def.rarity}">${bot.def.icon}</div><div class="c-name">${bot.name}<br><small>OPPONENT</small></div></div>
+        <div class="hpbar-wrap"><div class="hpbar enemy" id="hp_enemy" style="width:100%"></div><div class="hp-text" id="hpt_enemy">${result.enemy.maxHp}/${result.enemy.maxHp}</div></div>
+        <div class="energy-dots" id="en_enemy"></div>
+        <div class="status-row" id="st_enemy"></div>
+      </div>
+    </div>
+    <div class="log-wrap" id="battleLogWrap"></div>
+  `;
+  document.getElementById('btnSkipBattle').addEventListener('click', ()=>{ skipRequested=true; });
+  for(let i=0;i<5;i++){ document.getElementById('en_player').innerHTML+='<span class="edot"></span>'; document.getElementById('en_enemy').innerHTML+='<span class="edot"></span>'; }
+}
+
+let skipRequested=false;
+function playbackLog(result, onFinish){
+  skipRequested=false;
+  const maxHpP = result.player.maxHp, maxHpE = result.enemy.maxHp;
+  let curP=maxHpP, curE=maxHpE;
+  const logWrap = document.getElementById('battleLogWrap');
+  let i=0;
+  function step(){
+    if(i>=result.log.length){ (onFinish||(()=>finishBattle(result)))(); return; }
+    const evt = result.log[i]; i++;
+    applyEventToUI(evt);
+    const line = document.createElement('div');
+    line.className='log-line'+(evt.crit?' crit':'');
+    line.innerHTML = logLineHtml(evt);
+    logWrap.prepend(line);
+    const delay = skipRequested? 20 : (evt.type==='dot'?260:520);
+    setTimeout(step, delay);
+  }
+  function applyEventToUI(evt){
+    const targetSide = evt.target || evt.actor;
+    if(evt.type==='dot'){
+      if(evt.actor==='player'){ curP=Math.max(0,curP-evt.dmg); updateHp('player',curP,maxHpP); }
+      else { curE=Math.max(0,curE-evt.dmg); updateHp('enemy',curE,maxHpE); }
+      floatDamage(evt.actor, evt.dmg, false);
+      return;
+    }
+    if(evt.type==='heal'){
+      if(evt.actor==='player'){ curP=Math.min(maxHpP,curP+evt.dmg); updateHp('player',curP,maxHpP); }
+      else { curE=Math.min(maxHpE,curE+evt.dmg); updateHp('enemy',curE,maxHpE); }
+      floatDamage(evt.actor, evt.dmg, 'heal');
+      return;
+    }
+    if(evt.type==='buff'){
+      flashActor(evt.actor);
+      return;
+    }
+    // basic or skill (damage to target)
+    if(evt.target==='enemy'){ curE=Math.max(0,curE-evt.dmg); updateHp('enemy',curE,maxHpE); }
+    else { curP=Math.max(0,curP-evt.dmg); updateHp('player',curP,maxHpP); }
+    floatDamage(evt.target, evt.dmg, evt.crit);
+    shakeActor(evt.target);
+  }
+  step();
+}
+
+function updateHp(side, cur, max){
+  const bar = document.getElementById('hp_'+side);
+  const txt = document.getElementById('hpt_'+side);
+  const pct = Math.max(0,Math.round((cur/max)*100));
+  if(bar) bar.style.width = pct+'%';
+  if(txt) txt.textContent = Math.max(0,Math.round(cur))+'/'+max;
+}
+function floatDamage(side, dmg, crit){
+  const container = document.getElementById('c_'+side);
+  if(!container) return;
+  const el = document.createElement('div');
+  el.className = 'dmg-float '+(crit==='heal'?'heal':(crit?'crit':'normal'));
+  el.textContent = (crit==='heal'? '+':'-') + Math.round(dmg) + (crit===true? '!':'');
+  el.style.left = (30+Math.random()*40)+'%';
+  el.style.top = '8px';
+  container.style.position='relative';
+  container.appendChild(el);
+  setTimeout(()=>el.remove(), 1000);
+}
+function shakeActor(side){
+  const el = document.getElementById('c_'+side);
+  if(!el) return;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+  const bar = document.getElementById('hp_'+side);
+  if(bar){ bar.parentElement.classList.remove('flash-hit'); void bar.offsetWidth; bar.parentElement.classList.add('flash-hit'); }
+}
+function flashActor(side){
+  const el = document.getElementById('c_'+side);
+  if(!el) return;
+  el.classList.remove('flash-hit'); void el.offsetWidth; el.classList.add('flash-hit');
+}
+function logLineHtml(evt){
+  if(evt.type==='dot') return `<b>${evt.actor==='player'?'You':'Opponent'}</b> suffer <span class="dmg">${evt.dmg}</span> ${(evt.label||'burn').toLowerCase()} damage.`;
+  if(evt.type==='heal') return `<b>${evt.actor==='player'?'You':'Opponent'}</b> use <b>${evt.skillName}</b>, healing <span class="dmg">${evt.dmg}</span>.`;
+  if(evt.type==='buff') return `<b>${evt.actor==='player'?'You':'Opponent'}</b> cast <b>${evt.skillName}</b>.`;
+  const who = evt.actor==='player'?'You':'Opponent';
+  const critTxt = evt.crit? ' <b>CRITICAL!</b>':'';
+  const hitsTxt = evt.hits===2? ' (double hit)':'';
+  return `<b>${who}</b> use <b>${evt.skillName}</b> for <span class="dmg">${evt.dmg}</span> damage${hitsTxt}.${critTxt}`;
+}
+
+function finishBattle(result){
+  battleInProgress=false;
+  const bot = S.currentBot;
+  const rankInfo = computeRank(result);
+  const h = activeHero();
+  const def = charDef(h.defId);
+
+  // rewards
+  const rankMultMap = {S:1.6, A:1.3, B:1.05, C:0.85, D:0.35};
+  const rankMult = rankMultMap[rankInfo.rank];
+  const dm = 1;
+  const baseGold = 90 + S.acctLvl*14;
+  const gold = Math.round(baseGold * rankMult * (result.win?1:0.5) * dm * (1+0.06*tal('greed')));
+  const xp = Math.round((22 + S.acctLvl*2) * rankMult * (result.win?1:0.4) * dm * (1+0.06*tal('scholar')));
+  let crystals=0, crystalType='crystalCommon', gems=0;
+  if(result.win){
+    crystals = Math.max(1, Math.round(2*rankMult*dm));
+    if(Math.random() < 0.06*tal('alchemy')) crystals += 1;
+    // material tier is rolled independently of the hero's own rarity — mostly common/rare,
+    // with rank & account level nudging the odds toward better crystals, and a small chance at legendary.
+    const rankBias = {S:0.16, A:0.09, B:0.03, C:0, D:0}[rankInfo.rank] || 0;
+    const lvlBias = Math.min(0.12, S.acctLvl*0.003);
+    const dropOdds = {
+      crystalCommon:    Math.max(0.05, 0.62 - rankBias - lvlBias),
+      crystalRare:      0.27,
+      crystalEpic:      0.09 + rankBias*0.5 + lvlBias*0.5,
+      crystalLegendary: 0.02 + rankBias*0.5 + lvlBias*0.5,
+    };
+    const total = Object.values(dropOdds).reduce((a,b)=>a+b,0);
+    Object.keys(dropOdds).forEach(k=>dropOdds[k]/=total);
+    crystalType = weightedPick(dropOdds);
+    if(rankInfo.rank==='S' && Math.random()<0.5) gems = 8;
+    if(rankInfo.rank==='A' && Math.random()<0.25) gems = 4;
+  }
+
+  S.gold += gold;
+  S.mats[crystalType] = (S.mats[crystalType]||0)+crystals;
+  S.gems += gems;
+  S.acctXp += xp;
+  S.battles++;
+  if(result.win){ S.wins++; S.lossStreak=0; } else S.lossStreak=(S.lossStreak||0)+1;
+  const trGain = result.win ? 20+Math.round(Math.random()*8)+(rankInfo.rank==='S'?6:0) : -Math.min(S.trophies||0, 14+Math.round(Math.random()*4));
+  S.trophies = (S.trophies||0)+trGain;
+  S.trophyBest = Math.max(S.trophyBest||0, S.trophies);
+
+  // account level curve
+  let leveledUp=false;
+  while(S.acctXp >= acctXpNeeded(S.acctLvl)){
+    S.acctXp -= acctXpNeeded(S.acctLvl);
+    S.acctLvl++;
+    leveledUp=true;
+  }
+
+  S.lastResult = {
+    win: result.win, botName: bot.name, trophies: trGain, rank: rankInfo.rank, rounds: result.round,
+    hpPct: result.hpPct, gold, xp, crystals, crystalType, gems
+  };
+  S.currentBot = null;
+  save();
+
+  showResultOverlay(rankInfo, result, {gold,xp,crystals,crystalType,gems,trophies:trGain}, leveledUp);
+}
+
+function acctXpNeeded(lvl){ return Math.round(60*Math.pow(lvl,1.35)); }
+
+function showResultOverlay(rankInfo, result, rewards, leveledUp){
+  const overlay = document.getElementById('resultOverlay');
+  document.getElementById('resultRank').textContent = rankInfo.rank;
+  document.getElementById('resultRank').style.background = result.win? 'linear-gradient(180deg,#fff,var(--ember))':'linear-gradient(180deg,#fff,var(--bad))';
+  document.getElementById('resultRank').style.webkitBackgroundClip='text';
+  document.getElementById('resultRank').style.backgroundClip='text';
+  const titleEl = document.getElementById('resultTitle');
+  titleEl.textContent = result.win? 'VICTORY':'DEFEAT';
+  titleEl.className = 'result-title '+(result.win?'win':'lose');
+  document.getElementById('resultSub').textContent = rankInfo.label + (leveledUp? ' · Account Level Up!' : '');
+
+  const rewardsEl = document.getElementById('resultRewards');
+  let html = `<div class="reward-item"><span class="ic">${ICONS.gold}</span> <span>Gold</span><b style="margin-left:auto;">+${fmtNum(rewards.gold)}</b></div>`;
+  html += `<div class="reward-item"><span class="ic">${ICONS.xp}</span> <span>Account XP</span><b style="margin-left:auto;">+${rewards.xp}</b></div>`;
+  html += `<div class="reward-item"><span class="ic">🏆</span> <span>Trophies</span><b style="margin-left:auto;">${rewards.trophies>=0?'+':''}${rewards.trophies}</b></div>`;
+  if(rewards.crystals) html += `<div class="reward-item"><span class="ic">${MATERIAL_DEFS.find(m=>m.id===rewards.crystalType).icon}</span> <span>${MATERIAL_DEFS.find(m=>m.id===rewards.crystalType).name}</span><b style="margin-left:auto;">+${rewards.crystals}</b></div>`;
+  if(rewards.gems) html += `<div class="reward-item"><span class="ic">${ICONS.gem}</span> <span>Gems</span><b style="margin-left:auto;">+${rewards.gems}</b></div>`;
+  rewardsEl.innerHTML = html;
+
+  overlay.classList.add('show');
+}
+document.getElementById('btnCloseResult').addEventListener('click', ()=>{
+  document.getElementById('resultOverlay').classList.remove('show');
+  renderAll();
+});
+document.getElementById('btnClosePull').addEventListener('click', ()=>{
+  document.getElementById('pullOverlay').classList.remove('show');
+});
+
+/* =========================================================================
+   RENDER: PROFILE + TOPBAR
+========================================================================= */
+function renderProfilePage(){
+  applyDevLockUI();
+  const unInput = document.getElementById('usernameInput');
+  if(unInput && document.activeElement!==unInput) unInput.value = S.username||'';
+  renderSecurityCard();
+  document.getElementById('pAcctLvl').textContent = S.acctLvl;
+  const needed = acctXpNeeded(S.acctLvl);
+  document.getElementById('pAcctXpBar').style.width = Math.min(100, Math.round((S.acctXp/needed)*100))+'%';
+  document.getElementById('pBattles').textContent = S.battles;
+  document.getElementById('pWins').textContent = S.wins;
+  document.getElementById('pTrophies').textContent = S.trophies||0;
+  document.getElementById('pWinrate').textContent = S.battles? Math.round((S.wins/S.battles)*100)+'%' : '0%';
+  document.getElementById('pHeroes').textContent = S.heroes.length + ' / ' + CHAR_DEFS.length;
+  document.getElementById('pSkills').textContent = S.skills.length + ' / ' + SKILL_DEFS.length;
+  document.getElementById('pBonus').textContent = '+'+(globalAccountBonus()*100).toFixed(1)+'%';
+  const dailyEl = document.getElementById('pDailyStreak');
+  if(dailyEl){
+    const claimedToday = S.daily.lastClaim===todayStr();
+    dailyEl.textContent = (S.daily.streak||0)+' day'+((S.daily.streak||0)===1?'':'s')+(claimedToday?' · claimed today':'');
+  }
+
+  const infBtn = document.getElementById('btnDevInfinite');
+  const infHint = document.getElementById('devInfiniteHint');
+  if(infBtn){
+    infBtn.disabled = false;
+    infBtn.textContent = S.infinite ? '∞ Infinite Mode: ON (tap to turn off)' : '∞ Turn on Infinite Gold & Gems';
+    infHint.textContent = S.infinite
+      ? 'Infinite mode is active (gold, gems and all crystals). Turning it off restores your earlier balances.'
+      : 'Works anytime, you do not need every hero or skill. Also fills all crystals.';
+  }
+}
+document.getElementById('btnSaveUsername').addEventListener('click', ()=>{
+  const v = document.getElementById('usernameInput').value.trim().slice(0,16);
+  if(!v){ toast('Enter a username first'); return; }
+  S.username = v; save(); toast('Username saved: '+v);
+});
+document.getElementById('btnOpenDaily').addEventListener('click', ()=>{
+  const today = todayStr();
+  const claimedToday = S.daily.lastClaim===today;
+  const streak = S.daily.streak||0;
+  const cycleDay = streak>0 ? ((streak-1)%7)+1 : 1;
+  if(claimedToday){
+    showDailyRewardModal(cycleDay, streak, true);
+  } else {
+    checkDailyLogin();
+  }
+});
+
+/* ---------- ACCOUNT SECURITY UI ---------- */
+function renderSecurityCard(){
+  const card = document.getElementById('securityCard');
+  if(!card) return;
+  if(S.security){
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;color:var(--good);font-weight:800;font-size:13px;margin-bottom:8px;">🔒 Account is password-protected</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Your save is encrypted on this device with your password. Export a backup code to move your account to another browser/device.</div>
+      <button class="btn btn-ghost btn-block btn-sm" id="btnExportBackup">Export Backup Code</button>
+      <button class="btn btn-danger btn-block btn-sm" id="btnRemoveProtection" style="margin-top:8px;">Remove Protection</button>
+    `;
+    document.getElementById('btnExportBackup').addEventListener('click', async ()=>{
+      const raw = localStorage.getItem(SAVE_KEY);
+      showBackupCodeOverlay(raw||'');
+    });
+    document.getElementById('btnRemoveProtection').addEventListener('click', ()=>{
+      if(!accountPassword){ toast('Unlock with your password first (reload the page)'); return; }
+      S.security = null; accountPassword = null; save(); renderSecurityCard(); toast('Protection removed — save is now plain');
+    });
+  } else {
+    card.innerHTML = `
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Protect this save with a password: it will be encrypted (AES-256) before being stored on this device. This is local protection, not a server account — there is no password recovery.</div>
+      <input type="password" id="secPass1" placeholder="New password" autocomplete="new-password"
+        style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);margin-bottom:8px;font-size:13px;">
+      <input type="password" id="secPass2" placeholder="Confirm password" autocomplete="new-password"
+        style="width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--void-2);color:var(--bone);margin-bottom:10px;font-size:13px;">
+      <button class="btn btn-primary btn-block btn-sm" id="btnSetProtection">Encrypt &amp; Protect Account</button>
+      <div style="font-size:11px;color:var(--muted-2);margin:14px 0 6px;">Have a backup code from another device?</div>
+      <textarea class="friend-code-box" id="importBackupInput" placeholder="Paste backup code..."></textarea>
+      <button class="btn btn-ghost btn-block btn-sm" id="btnImportBackup" style="margin-top:6px;">Import Backup Code</button>
+    `;
+    document.getElementById('btnSetProtection').addEventListener('click', async ()=>{
+      const p1 = document.getElementById('secPass1').value, p2 = document.getElementById('secPass2').value;
+      if(p1.length<4){ toast('Password must be at least 4 characters'); return; }
+      if(p1!==p2){ toast('Passwords do not match'); return; }
+      accountPassword = p1;
+      S.security = {on:true};
+      save();
+      renderSecurityCard();
+      toast('Account protected');
+    });
+    document.getElementById('btnImportBackup').addEventListener('click', async ()=>{
+      const raw = document.getElementById('importBackupInput').value.trim();
+      if(!raw){ toast('Paste a backup code first'); return; }
+      try{
+        const wrapper = JSON.parse(raw);
+        if(wrapper.enc){
+          const pass = prompt('Enter the password for this backup:');
+          if(!pass) return;
+          const json = await decryptState(wrapper, pass);
+          S = JSON.parse(json); normalizeState();
+          accountPassword = pass; S.security = {on:true};
+        } else {
+          S = wrapper; normalizeState();
+        }
+        save(); renderAll();
+        toast('Backup imported');
+      }catch(e){ toast('Invalid or corrupted backup code'); }
+    });
+  }
+}
+function showBackupCodeOverlay(codeStr){
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show';
+  overlay.style.zIndex='160';
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:420px;">
+    <div class="detail-back" id="bkClose">← Close</div>
+    <h3 class="display" style="font-size:16px;color:var(--bone);margin-bottom:8px;">Backup Code</h3>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;">Copy this and store it somewhere safe. Import it (with your password) on any device to restore this exact account.</div>
+    <textarea class="friend-code-box" style="min-height:140px;" readonly>${codeStr}</textarea>
+    <button class="btn btn-ghost btn-block btn-sm" id="bkCopy" style="margin-top:8px;">Copy Backup Code</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#bkClose').addEventListener('click', ()=>overlay.remove());
+  overlay.querySelector('#bkCopy').addEventListener('click', async ()=>{
+    try{ await navigator.clipboard.writeText(codeStr); toast('Backup code copied'); }
+    catch(e){ const ta=overlay.querySelector('.friend-code-box'); ta.select(); document.execCommand('copy'); toast('Backup code copied'); }
+  });
+}
+
+const DEV_PASSWORD = 'reaper1993';
+function devToolsUnlocked(){ return sessionStorage.getItem('rf_dev_unlocked')==='1'; }
+function applyDevLockUI(){
+  const locked = document.getElementById('devLockedCard');
+  const tools = document.getElementById('devToolsCard');
+  if(!locked || !tools) return;
+  if(devToolsUnlocked()){ locked.style.display='none'; tools.style.display=''; }
+  else { locked.style.display=''; tools.style.display='none'; }
+}
+document.getElementById('btnDevUnlock').addEventListener('click', ()=>{
+  const input = document.getElementById('devPassInput');
+  if(input.value === DEV_PASSWORD){
+    sessionStorage.setItem('rf_dev_unlocked','1');
+    applyDevLockUI();
+    toast('Developer tools unlocked');
+  } else {
+    toast('Incorrect password');
+    input.value='';
+  }
+});
+document.getElementById('btnResetGame').addEventListener('click', ()=>{
+  if(confirm('Restart your account? All heroes, skills and progress will be permanently lost.')){
+    S = freshState(); save(); renderAll();
+    toast('Account restarted');
+  }
+});
+
+document.getElementById('btnDevMaxAll').addEventListener('click', ()=>{
+  if(!confirm('Developer tool: own & max every hero and skill? This is for testing only.')) return;
+  // grant every skill, maxed
+  CHAR_DEFS.forEach(def=>{
+    if(!S.heroes.some(h=>h.defId===def.id)){
+      S.heroes.push({iid:'h_'+def.id, defId:def.id, level:1, star:1, xp:0, slots:[null,null,null,null,null,null]});
+    }
+  });
+  SKILL_DEFS.forEach(def=>{
+    if(!S.skills.some(s=>s.defId===def.id)){
+      S.skills.push({iid:'sk_'+def.id, defId:def.id, level:1, star:1});
+    }
+  });
+  S.heroes.forEach(h=>{ h.star=5; h.level=levelCapFor(5); });
+  S.skills.forEach(s=>{ s.star=5; s.level=levelCapFor(5); });
+  // auto-equip a full loadout of the strongest skills on every hero
+  const bestSkills = [...S.skills].sort((a,b)=>RARITY[skillDef(b.defId).rarity].order-RARITY[skillDef(a.defId).rarity].order).slice(0,6).map(s=>s.iid);
+  S.heroes.forEach(h=>{ h.slots = bestSkills.slice(0,6); while(h.slots.length<6) h.slots.push(null); });
+  S.mats = {crystalCommon:9999, crystalRare:9999, crystalEpic:9999, crystalLegendary:9999};
+  S.heroes.forEach(h=>{ h.runes = RUNE_DEFS.map(r=>({t:RUNE_MAX, perk:r.perks[0]})); });
+  S.acctLvl = Math.max(S.acctLvl, 60);
+  save(); renderAll();
+  toast('Everything unlocked & maxed');
+});
+document.getElementById('btnDevInfinite').addEventListener('click', ()=>{
+  if(!S.infinite){
+    S.bank = {gold:S.gold, gems:S.gems, mats:Object.assign({},S.mats)};
+    S.infinite = true;
+  } else {
+    S.infinite = false;
+    if(S.bank){ S.gold=S.bank.gold; S.gems=S.bank.gems; S.mats=S.bank.mats; S.bank=null; }
+  }
+  save(); renderAll();
+  toast(S.infinite?'Infinite mode ON':'Infinite mode OFF');
+});
+
+function renderTopbar(){
+  document.getElementById('goldAmt').textContent = S.infinite?'∞':fmtNum(S.gold);
+  document.getElementById('gemAmt').textContent = S.infinite?'∞':fmtNum(S.gems);
+  document.getElementById('acctLvl').textContent = S.acctLvl;
+}
+
+/* =========================================================================
+   TAB NAVIGATION
+========================================================================= */
+function setActiveTab(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelector('.tab-battle').classList.toggle('active', name==='battle');
+  if(name==='heroes') renderHeroesPage();
+  if(name==='upgrade') renderUpgradePage();
+  if(name==='shop') renderShopPage();
+  if(name==='battle') renderBattlePage();
+  if(name==='profile') renderProfilePage();
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click', ()=>setActiveTab(b.dataset.tab)));
+document.querySelector('.tab-battle').addEventListener('click', ()=>setActiveTab('battle'));
+
+document.querySelectorAll('.seg-btn').forEach(b=>b.addEventListener('click', ()=>{ upgSeg=b.dataset.seg; renderUpgradePage(); }));
+
+/* =========================================================================
+   INIT
+========================================================================= */
+function renderAll(){
+  renderTopbar();
+  const activeName = document.querySelector('.page.active')?.id.replace('page-','') || 'heroes';
+  setActiveTab(activeName);
+}
+
+loadState();
+if(pendingEncryptedSave){
+  document.getElementById('lockScreen').style.display='flex';
+  const doUnlock = async ()=>{
+    const pass = document.getElementById('lockPassInput').value;
+    if(!pass) return;
+    const ok = await unlockAccount(pass);
+    if(ok){ document.getElementById('lockScreen').style.display='none'; renderAll(); checkDailyLogin(); }
+    else { toast('Wrong password'); document.getElementById('lockPassInput').value=''; }
+  };
+  document.getElementById('lockUnlockBtn').addEventListener('click', doUnlock);
+  document.getElementById('lockPassInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doUnlock(); });
+} else {
+  renderAll();
+  checkDailyLogin();
+}
+
+})();
+</script>
+</body>
+</html>
