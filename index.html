@@ -1597,13 +1597,42 @@ function renderSkillGrid(h){
       const maxed = isSkillMaxed(si);
       slot.className = 'skill-slot filled r-'+sd.rarity+(maxed?' maxed':'');
       slot.innerHTML = `<div class="sstars">${'★'.repeat(si.star)}</div><span class="type-tag tag-skill">Skill</span><div class="sic">${sd.icon}</div><div class="sname">${sd.name}</div><div class="slvl">${maxed?'MAX':'Lv'+si.level}</div>`;
+      slot.addEventListener('click', ()=>showSkillDetail(h, i, si));
     } else {
       slot.className = 'skill-slot empty';
       slot.innerHTML = `<div class="plus">+</div><div class="sname">Empty</div>`;
+      slot.addEventListener('click', ()=>openSlotPicker(h,i));
     }
-    slot.addEventListener('click', ()=>openSlotPicker(h,i));
     grid.appendChild(slot);
   }
+}
+
+// Tapping a filled skill slot first shows what the skill actually does,
+// instead of jumping straight into swapping it out.
+function showSkillDetail(h, slotIndex, si){
+  const sd = skillDef(si.defId);
+  const maxed = isSkillMaxed(si);
+  const overlay = document.createElement('div');
+  overlay.className = 'result-overlay show';
+  overlay.style.zIndex = '150';
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:380px;">
+    <div style="display:flex;gap:12px;align-items:center;">
+      <div class="portrait r-${sd.rarity}${maxed?' maxed':''}" style="width:52px;height:52px;font-size:22px;flex-shrink:0;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+      <div style="min-width:0;">
+        <h3 class="display" style="font-size:16px;color:var(--bone);">${sd.name}${maxed?' <span class="max-badge">MAX</span>':''}</h3>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="rarity-text" style="--rc:${rarityColorRaw(sd.rarity)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}</div>
+      </div>
+    </div>
+    <div style="font-size:12.5px;color:var(--muted);margin-top:12px;font-style:italic;">"${sd.desc}"</div>
+    <div style="font-size:12px;color:var(--bone);margin-top:10px;line-height:1.55;background:var(--void-2);border:1px solid var(--line-soft);border-radius:10px;padding:10px 11px;">${skillEffectSummary(sd)}</div>
+    <button class="btn btn-primary btn-block btn-sm" style="margin-top:14px;" id="btnSkillDetailChange">Change Skill</button>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="btnSkillDetailClose">Close</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  const close = ()=>overlay.remove();
+  overlay.querySelector('#btnSkillDetailClose').addEventListener('click', close);
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) close(); });
+  overlay.querySelector('#btnSkillDetailChange').addEventListener('click', ()=>{ close(); openSlotPicker(h, slotIndex); });
 }
 
 function renderSynergyBox(h){
@@ -2714,6 +2743,15 @@ function simulateFight(player, enemy){
   const MAX_ROUNDS = 22;
   let round=0;
 
+  // Defense's flat pre-multiplier subtraction above matters early on, but once
+  // skill power (up to ~2.6x), elemental advantage (1.25x), signature bonuses
+  // (1.55x) and crits (150%+) stack multiplicatively on a maxed attacker, that
+  // fixed subtraction becomes negligible next to the final number — which is
+  // why fully-built heroes could nearly one-shot anything. This second,
+  // percentage-based layer scales WITH the target's defense and is applied
+  // after all of those multipliers, so investing in DEF keeps mattering at
+  // every stage instead of being drowned out at max level.
+  const DEF_MITIGATION_K = 32000;
   function computeDamage(attacker, target, mult, canCrit, el){
     let dmg = Math.max(1, effAtk(attacker)*mult - effDef(target)*0.5);
     dmg *= elemMult(el||attacker.def.el, target.def.el);
@@ -2722,6 +2760,8 @@ function simulateFight(player, enemy){
     if(canCrit && Math.random()*100 < (attacker.base.crit||0)){
       crit=true; dmg *= (1+(attacker.base.critDmg||150)/100);
     }
+    const mitigation = effDef(target) / (effDef(target) + DEF_MITIGATION_K);
+    dmg = Math.max(1, dmg * (1-mitigation));
     let shieldAbs=0;
     const shield = target.statuses.find(s=>s.type==='shield');
     if(shield){
