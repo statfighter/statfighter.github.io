@@ -219,6 +219,24 @@ nav.tabbar{
 }
 .rarity-text{color:var(--rc);font-weight:700;}
 
+.boss-progress{height:6px;border-radius:4px;background:var(--void-2);overflow:hidden;margin-top:12px;border:1px solid var(--line-soft);}
+.boss-progress i{display:block;height:100%;background:linear-gradient(90deg,#b8442a,var(--ember));}
+.boss-rewards{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+.boss-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;font-size:11.5px;font-weight:800;background:var(--panel-2);border:1px solid var(--line-soft);color:var(--bone);}
+.boss-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line-soft);margin-bottom:6px;font-size:12px;}
+.boss-row .bn{width:26px;font-weight:800;color:var(--muted);text-align:center;}
+.boss-row.cleared{opacity:.6;}
+.boss-row.locked{opacity:.85;}
+.boss-row.next{border-color:var(--ember);box-shadow:0 0 0 1px rgba(255,150,60,.35);}
+.boss-done{text-align:center;padding:8px 0 2px;}
+.pity-line{position:relative;margin-top:10px;font-size:11px;color:var(--muted);line-height:1.45;}
+.pity-line b{color:var(--c-divine);}
+.pity-bar{height:5px;border-radius:4px;background:var(--void-2);overflow:hidden;margin-top:5px;border:1px solid var(--line-soft);}
+.pity-bar i{display:block;height:100%;background:linear-gradient(90deg,#1f8f66,var(--c-divine));}
+.duo-note{margin-top:8px;padding:8px 10px;border-radius:10px;font-size:11.5px;line-height:1.45;color:var(--bone);
+  background:linear-gradient(160deg,#150a26,#06120d);border:1px solid #7F45E6;box-shadow:0 0 12px rgba(127,69,230,.35);}
+.duo-note b{color:var(--c-divine);}
+
 /* ---------- HERO / CHARACTER CARDS ---------- */
 .hero-hero{
   border-radius:var(--radius-l);
@@ -517,6 +535,7 @@ nav.tabbar{
 .dmg-float.crit{font-size:19px;color:#ffcf5c;}
 .dmg-float.normal{font-size:15px;color:#fff;}
 .dmg-float.heal{font-size:15px;color:#8bffb0;}
+.dmg-float.dodge{font-size:14px;color:#c4a6ff;font-style:italic;}
 .shake{animation:shakeFx .32s;}
 @keyframes shakeFx{
   0%,100%{transform:translateX(0);}
@@ -699,6 +718,9 @@ nav.tabbar{
       <div class="section-title"><h2>Arena<button class="info-btn" data-info="arena">i</button></h2><span class="sub">1 v 1 · rated</span></div>
       <div class="card hero-hero r-common" id="matchCard"></div>
 
+      <div class="section-title"><h2>Boss Rush<button class="info-btn" data-info="boss">i</button></h2><span class="sub" id="bossSub">100 bosses</span></div>
+      <div class="card" id="bossCard"></div>
+
       <div class="section-title"><h2>Trophy Path<button class="info-btn" data-info="trophypath">i</button></h2><span class="sub">milestone rewards</span></div>
       <div class="card" id="trophyPathCard"></div>
 
@@ -766,6 +788,18 @@ nav.tabbar{
 
       <div class="section-title"><h2>Account Security<button class="info-btn" data-info="security">i</button></h2><span class="sub">local encryption</span></div>
       <div class="card" id="securityCard"></div>
+
+      <div class="section-title"><h2>Save Backup</h2><span class="sub">export &amp; import</span></div>
+      <div class="card" id="saveBackupCard">
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Export your whole account (heroes, skills, gems, boss progress, everything) and load it again later — on this or another device. Password-protected accounts export an encrypted file.</div>
+        <button class="btn btn-primary btn-block btn-sm" id="btnExportSaveFile">⬇ Download Save File</button>
+        <button class="btn btn-ghost btn-block btn-sm" id="btnExportSaveCopy" style="margin-top:8px;">Copy Save Code</button>
+        <div style="font-size:11px;color:var(--muted-2);margin:14px 0 6px;">Load a save</div>
+        <input type="file" id="importSaveFile" accept=".json,.txt,application/json,text/plain" style="display:none;">
+        <button class="btn btn-arcane btn-block btn-sm" id="btnPickSaveFile">📂 Load Save File…</button>
+        <textarea class="friend-code-box" id="importSaveText" placeholder="…or paste a save code here" style="margin-top:8px;"></textarea>
+        <button class="btn btn-ghost btn-block btn-sm" id="btnImportSaveText" style="margin-top:6px;">Load Pasted Save</button>
+      </div>
 
       <div class="section-title"><h2>Daily Rewards<button class="info-btn" data-info="daily">i</button></h2><span class="sub">account</span></div>
       <div class="card">
@@ -855,12 +889,12 @@ nav.tabbar{
    DATA DEFINITIONS
 ========================================================================= */
 const RARITY = {
-  common:    {key:'common',    label:'Common',    order:0, mult:1.00, shardsToStar:[3,5,8,14,22], crystal:'crystalCommon'},
-  rare:      {key:'rare',      label:'Rare',      order:1, mult:1.35, shardsToStar:[3,5,8,14,22], crystal:'crystalRare'},
-  epic:      {key:'epic',      label:'Epic',      order:2, mult:1.85, shardsToStar:[3,5,8,14,22], crystal:'crystalEpic'},
-  legendary: {key:'legendary', label:'Legendary', order:3, mult:2.55, shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
-  mythic:    {key:'mythic',    label:'Mythic',    order:4, mult:3.4,  shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
-  divine:    {key:'divine',    label:'Divine',    order:5, mult:4.6,  shardsToStar:[3,5,8,14,22], crystal:'crystalLegendary'},
+  common:    {key:'common',    label:'Common',    order:0, mult:1.00, shardsToStar:[2,3,4,6,9], crystal:'crystalCommon'},
+  rare:      {key:'rare',      label:'Rare',      order:1, mult:1.35, shardsToStar:[2,3,4,6,9], crystal:'crystalRare'},
+  epic:      {key:'epic',      label:'Epic',      order:2, mult:1.85, shardsToStar:[2,3,4,6,9], crystal:'crystalEpic'},
+  legendary: {key:'legendary', label:'Legendary', order:3, mult:2.55, shardsToStar:[2,3,4,6,9], crystal:'crystalLegendary'},
+  mythic:    {key:'mythic',    label:'Mythic',    order:4, mult:3.4,  shardsToStar:[2,3,4,6,9], crystal:'crystalLegendary'},
+  divine:    {key:'divine',    label:'Divine',    order:5, mult:4.6,  shardsToStar:[2,3,4,6,9], crystal:'crystalLegendary'},
 };
 const ELEMENTS = {
   fire:   {label:'Fire',   sym:'♨',  color:'#FF7A45'},
@@ -877,6 +911,7 @@ const CLASSES = {
   mage:{label:'Mage',sym:'✦'},
   support:{label:'Support',sym:'✚'},
   reaper:{label:'Reaper',sym:'☠'},
+  phantom:{label:'Phantom',sym:'☾'},
 };
 
 // Distinctive glyph set replacing generic emoji across the UI.
@@ -893,14 +928,15 @@ const ICONS = {
 const INFO_TEXTS = {
   arena:{title:'Arena', body:'Fight a 1v1 match against a matched opponent. Win to earn Gold, XP and Trophies; a loss costs some Trophies but never your gear. Matchmaking softly targets a fair win chance and gives a small mercy boost after losing streaks.'},
   trophypath:{title:'Trophy Path', body:'A road of Arenas unlocked by your all-time highest Trophy count (losing a match never locks you back out of rewards already reached). Tap a stop on the road to see its rewards, then claim once you\'ve reached it. Some Arenas also grant a free chest.'},
-  helper:{title:'Helper', body:'Pick a second hero to assist in battle. It contributes a share of its stats to your active hero (more if they share an Element or Class) and lands a bonus assist strike every 3rd round.'},
+  helper:{title:'Helper', body:'Pick a second hero to assist in battle. It contributes a share of its stats to your active hero (more if they share an Element or Class) and lands a bonus assist strike every 3rd round. Pair The Grim Reaper with Shadow (either one as the helper) to unlock the Divine Duo bonus: a much bigger stat share, extra ATK and Crit, and a stronger assist strike every 2nd round.'},
+  boss:{title:'Boss Rush', body:'100 bosses, each stronger than the last. Beat the next boss to claim its one-time reward: Gold, Gems, Crystals and Account XP, growing with every boss (Guardians every 10th boss pay triple Gems). Bosses have fixed stats, so the only way forward is getting stronger: level up heroes and skills, and use a helper. Only a fully maxed Grim Reaper and Shadow together (one as the helper) can take down the final boss.'},
   friendduel:{title:'Friend Duel', body:'A local, browser-only sparring match against a hero you set up yourself. Great for testing matchups — but it awards no Gold, XP or Trophies since no server is involved.'},
   battlelog:{title:'Battle Log', body:'Shows the outcome of your most recent Arena fight: win or loss, rounds taken, HP remaining and the rewards you earned.'},
   activehero:{title:'Active Hero', body:'The hero you currently fight with. Its Level, Star rank, Runes, Talents and equipped Skills all feed into its combat stats. Tap any hero in Your Roster to make it active.'},
   skillloadout:{title:'Skill Loadout', body:'Equip up to 6 skills here. They fire in this exact slot order during battle — the first ready skill (off cooldown, enough Energy) is used each turn, otherwise your hero falls back to a Basic Strike. Equipping skills of the same Element also grants a Synergy damage bonus, shown below the grid.'},
   roster:{title:'Your Roster', body:'Every hero you own, sorted by Power. Tap one to make it your Active Hero. Pull more heroes from crates in the Shop.'},
   forge:{title:'Forge', body:'Your hub for growing power, split into five tabs — Hero (level & star-up your active hero), Skills (level & star-up owned skills), Runes (equip imbues that unlock battle Perks at tier 5), Talents (spend one point per account level across Offense/Defense/Fortune trees), and Stats (spend Gold to permanently train account-wide base stats).'},
-  crates:{title:'Vault Shop — Crates', body:'Spend Gold or Gems to open crates for a chance at new heroes or skills (or shards/gold if you already own the result). Higher-tier crates cost more but roll better rarities — the Mythic Vault guarantees at least Epic.'},
+  crates:{title:'Vault Shop — Crates', body:'Spend Gold or Gems to open crates for a chance at new heroes or skills (or shards/gold if you already own the result). Higher-tier crates cost more but roll better rarities. The Mythic Vault has the best odds (5% Divine) and if 25 Mythic Vault chests pass without a Divine, the 25th is a guaranteed Divine card — a hero or a skill. Any Divine you pull resets that counter.'},
   materials:{title:'Materials', body:'Crystals are spent to level up heroes and skills — the tier of crystal needed matches the rarity being leveled. Buy extra with Gold if you\'re short.'},
   security:{title:'Account Security', body:'Optionally lock your save with a local password. Everything is encrypted and stored only on this device — there is no server, so a forgotten password cannot be recovered.'},
   daily:{title:'Daily Rewards', body:'Come back once per calendar day to claim Gold, Gems and, every 7th day, a free chest. Missing a full day resets your streak back to Day 1.'},
@@ -946,6 +982,11 @@ const CHAR_DEFS = [
  {id:'grimreaper', name:'The Grim Reaper', rarity:'divine', cls:'reaper', el:'void', icon:'☠',
    base:{hp:1650, atk:255, def:102, spd:148, crit:38, critDmg:255},
    signature:true, flavor:'A permanently overwhelming Divine hero — his edge never fades, star or no star.'},
+ // ---- DIVINE-tier signature hero #2: starts a little behind the Reaper, but his skill set scales far
+ // harder with Level/Star, so from roughly a third of the way to max he overtakes everything else.
+ {id:'shadow', name:'Shadow', rarity:'divine', cls:'phantom', el:'void', icon:'☾',
+   base:{hp: 1560, atk: 246, def: 97, spd: 150, crit: 36, critDmg: 250},
+   signature:true, flavor:'A patient, dodging, debuff-weaving Divine hero. Slow to reveal his full strength — impossible to stop once he does.'},
 ];
 
 // power multiplier grows with skill level (per-cast). type: attack/heal/buff/debuff
@@ -992,6 +1033,18 @@ const SKILL_DEFS = [
    doubleHit:.30, icon:'☠', desc:'Plunges the battlefield into an unending dark, striking again and again.', signatureHero:'grimreaper'},
  {id:'s_lastrites',     name:'Last Rites',      rarity:'divine', el:'void', type:'attack', power:1.35, cd:2, cost:3,
    heal:.40, lifesteal:.20, icon:'☠', desc:'A final rite — strikes the foe while restoring the caster.', signatureHero:'grimreaper'},
+
+ // ---- DIVINE-tier signature skillset for Shadow ----
+ // Usable by any hero at Divine power, but bonded ("signatureHero") to shadow: on him every value is
+ // amplified by signatureBoost, AND these skills grow `scaling`x faster per Level/Star than normal skills.
+ // Mechanics unique to this set: vuln (marked targets take extra damage), dodge (chance to avoid hits),
+ // multi-debuff, and punishDebuff (bonus damage against debuffed / bleeding targets).
+ {id:'s_umbralbrand', name:"Umbral Brand", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'attack', power:1.50, cd:2, cost:2, debuff:{stat:'vuln',pct:.16,turns:3}, desc:'Brands the target: it takes extra damage from every source while the mark lasts.'},
+ {id:'s_phantomstep', name:"Phantom Step", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'buff', power:0, cd:3, cost:2, buff:{stat:'spd',pct:.18,turns:3}, dodge:{pct:.24,turns:3}, desc:'Slips between heartbeats — a chance to dodge incoming attacks, and faster reactions.'},
+ {id:'s_nightveilrend', name:"Nightveil Rend", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'attack', power:1.75, cd:3, cost:3, debuff:[{stat:'def',pct:-.20,turns:2},{stat:'atk',pct:-.15,turns:2}], desc:'A tearing strike that saps both the target\'s defense and attack.'},
+ {id:'s_eclipseflurry', name:"Eclipse Flurry", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'attack', power:1.20, cd:1, cost:2, doubleHit:.38, dot:{stat:'burn',pct:.06,turns:3,label:'Umbral Rot'}, desc:'A flurry of cuts that may strike twice and leave a rotting wound.'},
+ {id:'s_oblivionedge', name:"Oblivion Edge", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'attack', power:2.20, cd:4, cost:4, punishDebuff:.45, desc:'A merciless finisher — far deadlier against targets that are already debuffed or bleeding.'},
+ {id:'s_duskmirage', name:"Dusk Mirage", rarity:'divine', el:'void', signatureHero:'shadow', signatureBoost:1.45, scaling:2.0, icon:'☾', type:'buff', power:0, cd:4, cost:3, buff:{stat:'atk',pct:.22,turns:3}, shield:.12, dodge:{pct:.15,turns:3}, desc:'A shimmering decoy: empowers Shadow, grants a shield and a chance to dodge.'},
 ];
 
 /* ---- PROCEDURAL EXPANSION: generated heroes & skills (deterministic — identical every load) ---- */
@@ -1003,7 +1056,7 @@ const GEN_TITLE = ['the Bold','Stormcaller','of the Deep','Ashblade','the Silent
 
 function genCharacters(count){
   const rarityCycle = ['common','rare','common','rare','epic','common','rare','legendary','common','rare','epic','common','mythic','rare','common','epic'];
-  const clsKeys = Object.keys(CLASSES);
+  const clsKeys = ['warrior','assassin','guardian','mage','support','reaper']; // fixed list: keeps generated heroes identical to earlier versions
   const elKeys = Object.keys(ELEMENTS);
   const out=[];
   for(let i=0;i<count;i++){
@@ -1033,7 +1086,7 @@ function genCharacters(count){
   }
   return out;
 }
-CHAR_DEFS.push(...genCharacters(Math.max(0, 72-CHAR_DEFS.length)));
+CHAR_DEFS.push(...genCharacters(59)); // fixed count (was 72 minus base heroes) so saved generated heroes keep their IDs
 
 const GEN_SKILL_ADJ = ['Ember','Frost','Storm','Void','Radiant','Iron','Blood','Shadow','Astral','Feral','Runic','Grave','Solar','Lunar','Chaos','Verdant','Wild','Silent','Molten','Glacier','Umbral','Sacred','Rift','Thunder'];
 const GEN_SKILL_NOUN = ['Strike','Slash','Burst','Wave','Nova','Fang','Edge','Pulse','Surge','Rend','Barrage','Cascade','Flare','Spiral','Thorn','Verdict','Requiem','Cry','Bloom','Shard','Echo','Vow','Bane','Ward'];
@@ -1095,17 +1148,18 @@ function genSkills(count){
   }
   return out;
 }
-SKILL_DEFS.push(...genSkills(Math.max(0, 190-SKILL_DEFS.length)));
+SKILL_DEFS.push(...genSkills(164)); // fixed count so saved generated skills keep their IDs
 
+const DIVINE_PITY = 25; // Mythic Vault: a Divine card is guaranteed once 25 chests pass without one (any Divine resets the counter)
 const CRATE_DEFS = [
  {id:'bronze', name:'Bronze Crate', icon:ICONS.crateBronze, currency:'gold', cost:600,
    odds:{common:.62,rare:.28,epic:.085,legendary:.014,mythic:.0008,divine:.0002}, desc:'A basic supply crate. Common pulls likely.'},
- {id:'silver', name:'Silver Cache', icon:ICONS.crateSilver, currency:'gem', cost:60,
+ {id:'silver', name:'Silver Cache', icon:ICONS.crateSilver, currency:'gem', cost:40,
    odds:{common:.30,rare:.40,epic:.22,legendary:.07,mythic:.009,divine:.001}, desc:'Enhanced odds for rare and epic finds.'},
- {id:'gold',   name:'Golden Reliquary', icon:ICONS.crateGold, currency:'gem', cost:180,
+ {id:'gold',   name:'Golden Reliquary', icon:ICONS.crateGold, currency:'gem', cost:120,
    odds:{common:.08,rare:.27,epic:.40,legendary:.21,mythic:.035,divine:.005}, desc:'Premium vault, favors epic and legendary.'},
- {id:'mythic', name:'Mythic Vault', icon:ICONS.crateMythic, currency:'gem', cost:480,
-   odds:{common:0,rare:.05,epic:.35,legendary:.45,mythic:.13,divine:.02}, desc:'Guaranteed epic or better. The best odds in the realm — including the highest chance anywhere to draw The Grim Reaper, at 2%.'},
+ {id:'mythic', name:'Mythic Vault', icon:ICONS.crateMythic, currency:'gem', cost:250,
+   odds:{common:0,rare:.05,epic:.35,legendary:.42,mythic:.13,divine:.05}, desc:'The best odds in the realm: 5% for a Divine card (The Grim Reaper, Shadow or one of their skills) — and if 25 chests pass without a Divine, the 25th is guaranteed (any Divine you pull resets the counter).'},
 ];
 
 const MATERIAL_DEFS = [
@@ -1120,29 +1174,29 @@ const MATERIAL_DEFS = [
    high), so a losing streak never locks you back out of rewards already earned.
    Each Arena's reward is claimed once. */
 const TROPHY_PATH = [
- {t:150,   name:'Ashen Fields',      icon:'♨', gold:400,   gems:0,   crystal:null,              crystalAmt:0, chest:false},
- {t:400,   name:'Iron Hollow',       icon:'⚙', gold:800,   gems:15,  crystal:'crystalCommon',   crystalAmt:4, chest:false},
- {t:800,   name:'Frost Reach',       icon:'❄', gold:1300,  gems:30,  crystal:'crystalRare',     crystalAmt:2, chest:true },
- {t:1400,  name:'Storm Peak',        icon:'↯', gold:2000,  gems:50,  crystal:'crystalRare',     crystalAmt:4, chest:false},
- {t:2200,  name:'Void Rift',         icon:'◈', gold:3000,  gems:80,  crystal:'crystalEpic',     crystalAmt:3, chest:true },
- {t:3200,  name:'Radiant Spire',     icon:'☀', gold:4500,  gems:120, crystal:'crystalEpic',     crystalAmt:5, chest:false},
- {t:4500,  name:'Ember Wastes',      icon:'⚔', gold:6500,  gems:170, crystal:'crystalLegendary',crystalAmt:3, chest:true },
- {t:6000,  name:'Shadow Citadel',    icon:'†', gold:9000,  gems:230, crystal:'crystalLegendary',crystalAmt:5, chest:false},
- {t:8000,  name:'Runeforge Sanctum', icon:'✦', gold:13000, gems:320, crystal:'crystalLegendary',crystalAmt:8, chest:true },
- {t:10000, name:'Eternal Throne',    icon:'☠', gold:20000, gems:500, crystal:'crystalLegendary',crystalAmt:15,chest:true },
+ {t:150,   name:'Ashen Fields',      icon:'♨', gold:400,   gems:10,  crystal:null,              crystalAmt:0, chest:false},
+ {t:400,   name:'Iron Hollow',       icon:'⚙', gold:800,   gems:25,  crystal:'crystalCommon',   crystalAmt:4, chest:false},
+ {t:800,   name:'Frost Reach',       icon:'❄', gold:1300,  gems:45,  crystal:'crystalRare',     crystalAmt:2, chest:true },
+ {t:1400,  name:'Storm Peak',        icon:'↯', gold:2000,  gems:75,  crystal:'crystalRare',     crystalAmt:4, chest:false},
+ {t:2200,  name:'Void Rift',         icon:'◈', gold:3000,  gems:120, crystal:'crystalEpic',     crystalAmt:3, chest:true },
+ {t:3200,  name:'Radiant Spire',     icon:'☀', gold:4500,  gems:180, crystal:'crystalEpic',     crystalAmt:5, chest:false},
+ {t:4500,  name:'Ember Wastes',      icon:'⚔', gold:6500,  gems:250, crystal:'crystalLegendary',crystalAmt:3, chest:true },
+ {t:6000,  name:'Shadow Citadel',    icon:'†', gold:9000,  gems:340, crystal:'crystalLegendary',crystalAmt:5, chest:false},
+ {t:8000,  name:'Runeforge Sanctum', icon:'✦', gold:13000, gems:460, crystal:'crystalLegendary',crystalAmt:8, chest:true },
+ {t:10000, name:'Eternal Throne',    icon:'☠', gold:20000, gems:700, crystal:'crystalLegendary',crystalAmt:15,chest:true },
 ];
 
 /* ---------- DAILY LOGIN REWARDS ----------
    A simple 7-day cycle; streak resets if a calendar day is missed. Day 7
    always includes a free crate pull ("small chest"). */
 const DAILY_REWARDS = [
- {day:1, gold:200,  gems:0,  chest:false},
- {day:2, gold:350,  gems:5,  chest:false},
- {day:3, gold:500,  gems:10, chest:false},
- {day:4, gold:650,  gems:15, chest:false},
- {day:5, gold:850,  gems:20, chest:false},
- {day:6, gold:1050, gems:25, chest:false},
- {day:7, gold:1500, gems:50, chest:true },
+ {day:1, gold:200,  gems:5,  chest:false},
+ {day:2, gold:350,  gems:10, chest:false},
+ {day:3, gold:500,  gems:15, chest:false},
+ {day:4, gold:650,  gems:22, chest:false},
+ {day:5, gold:850,  gems:30, chest:false},
+ {day:6, gold:1050, gems:38, chest:false},
+ {day:7, gold:1500, gems:75, chest:true },
 ];
 
 const STAR_CAP_LEVEL = [10,20,30,40,50]; // max level allowed per star index (0-based star-1..star5)
@@ -1296,6 +1350,8 @@ function freshState(){
     talents:{}, trophies:100, trophyBest:100, trophyClaimed:[], lossStreak:0, infinite:false,
     statTraining:{}, username:'', security:null, // security: {salt,iv} (base64) when account is password-protected
     daily:{streak:0, lastClaim:null},
+    mythicOpened:0, // Mythic Vault chests opened since the last Divine (drives the Divine guarantee)
+    bossCleared:0, // Boss Rush: number of bosses defeated (they must be beaten in order)
   };
 }
 
@@ -1331,6 +1387,8 @@ function normalizeState(){
   if(!S.statTraining) S.statTraining={};
   if(S.username===undefined) S.username='';
   if(S.security===undefined) S.security=null;
+  if(S.mythicOpened===undefined) S.mythicOpened=0;
+  if(S.bossCleared===undefined) S.bossCleared=0;
 }
 function save(){
   if(S && S.infinite){ S.gold=999999999; S.gems=999999999; ['crystalCommon','crystalRare','crystalEpic','crystalLegendary'].forEach(k=>S.mats[k]=99999); }
@@ -1354,6 +1412,10 @@ function getHero(iid){ return S.heroes.find(h=>h.iid===iid); }
 function getSkillInst(iid){ return S.skills.find(s=>s.iid===iid); }
 function activeHero(){ return getHero(S.activeHeroId) || S.heroes[0]; }
 function rarityColor(rk){ return 'var(--c-'+rk+')'; }
+// CSS classes for a hero/skill definition: rarity colour plus an optional custom theme (e.g. standard rarity colours)
+function themeCls(def){ return 'r-'+def.rarity+(def.theme?' th-'+def.theme:''); }
+function accentColor(def){ return def.theme==='shadow' ? '#A66BFF' : rarityColorRaw(def['rarity']); }
+function isDivineDuo(a, b){ return !!(a && b && a.rarity==='divine' && b.rarity==='divine' && a.id!==b.id); }
 
 function fmtNum(n){
   n = Math.round(n);
@@ -1379,19 +1441,16 @@ function heroComputedStats(h){
   let crit = def.base.crit;
   let critDmg = def.base.critDmg;
 
-  // passive contributions from equipped skills (flat small stat boosts per skill, scaled by skill level/star)
+  // Dedicated passive-type skills (their entire purpose IS a flat stat bonus) still contribute
+  // one here, scaled by the skill's own level/star growth. Active skills (attack/heal/buff/debuff)
+  // no longer add a separate unrelated stat trickle just for being equipped — leveling those
+  // instead scales their own listed power/effects directly (see skillGrowthMult, used in battle).
   const equipped = equippedSkills(h);
   equipped.forEach(si=>{
     if(!si) return;
     const sd = skillDef(si.defId);
-    const p = skillPower(si);
-    // every equipped skill contributes a small passive stat trickle regardless of active use
-    atk *= 1 + 0.012*p.levelFactor;
-    hp  *= 1 + 0.008*p.levelFactor;
-    dfn *= 1 + 0.010*p.levelFactor;
-    // dedicated passive skills (e.g. crit chance / crit damage synergy pieces) add a scaling flat bonus
     if(sd.passive){
-      const scale = 1 + p.levelFactor*0.035;
+      const scale = skillGrowthMult(si);
       if(sd.passive.crit)      crit    += sd.passive.crit * scale;
       if(sd.passive.critDmg)   critDmg += sd.passive.critDmg * scale;
       if(sd.passive.atkPct)    atk     *= 1 + sd.passive.atkPct*scale;
@@ -1450,6 +1509,25 @@ function skillPower(si){
   return { mult: sd.power * rar.mult * starMult * lvlMult * 0.62, levelFactor };
 }
 
+// How much a skill's OWN numbers (its listed damage/heal %, buff/debuff %, lifesteal, etc.)
+// grow as you level and star it up. This replaces the old system where leveling a skill just
+// tacked on unrelated flat ATK/HP/DEF to the hero — now leveling directly scales the skill's
+// own advertised attributes (e.g. a 138% Attack skill becomes a bigger % as it levels).
+function skillGrowthMult(si){
+  if(!si) return 1;
+  // Some skills (e.g. Shadow's set) define `scaling` > 1: they gain more per Level and per Star.
+  const sdef = si.def || skillDef(si.defId);
+  const k = (sdef && sdef.scaling) || 1;
+  const starM = 1 + (si.star-1)*0.10*k;   // +10% per star (5★ = 1.40x) — times k
+  const lvlM  = 1 + (si.level-1)*0.014*k; // +1.4% per level within its star (lvl 50 = ~1.69x) — times k
+  return starM*lvlM; // maxed out (5★/Lv50) = ~2.36x — a real but bounded payoff
+}
+// Softer growth curve used for secondary effects (buffs/debuffs/dot/shield) so a fully
+// maxed skill feels notably stronger without effects spiraling out of control.
+function skillEffectGrowth(si){
+  return 1 + (skillGrowthMult(si)-1)*0.55;
+}
+
 // counts equipped skills per element, returns bonuses
 function synergyReport(h){
   const equipped = equippedSkills(h).filter(Boolean);
@@ -1478,6 +1556,7 @@ function synergyReport(h){
   if(def.cls==='assassin') spdBonus += 0.05;
   if(def.cls==='support') critBonus += 0.02;
   if(def.cls==='reaper'){ critBonus += 0.06; atkBonus += 0.06; }
+  if(def.cls==='phantom'){ spdBonus += 0.06; critBonus += 0.05; }
 
   return {atkBonus, defBonus, spdBonus, critBonus, active, affinity, counts};
 }
@@ -1535,7 +1614,7 @@ function starsHtml(star, max){
 }
 function portraitEl(def, star, size, maxed){
   const rar = RARITY[def.rarity];
-  return `<div class="portrait r-${def.rarity}${maxed?' maxed':''}" style="${size?`width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;`:''}"><span class="type-tag tag-hero">Hero</span>${def.icon}<div class="stars">${starsHtml(star)}</div></div>`;
+  return `<div class="portrait ${themeCls(def)}${maxed?' maxed':''}" style="${size?`width:${size}px;height:${size}px;font-size:${Math.round(size*0.4)}px;`:''}"><span class="type-tag tag-hero">Hero</span>${def.icon}<div class="stars">${starsHtml(star)}</div></div>`;
 }
 function isHeroMaxed(h){ return h.star>=5 && h.level>=levelCapFor(h.star); }
 function isSkillMaxed(si){ return si.star>=5 && si.level>=levelCapFor(si.star); }
@@ -1555,7 +1634,7 @@ function renderHeroesPage(){
 
   const maxed = isHeroMaxed(h);
   const card = document.getElementById('activeHeroCard');
-  card.className = 'card hero-hero r-'+def.rarity+(maxed?' maxed':'');
+  card.className = 'card hero-hero '+themeCls(def)+(maxed?' maxed':'');
   card.innerHTML = `
     <div class="hero-top">
       ${portraitEl(def,h.star,74,maxed)}
@@ -1595,7 +1674,7 @@ function renderSkillGrid(h){
     if(si){
       const sd = skillDef(si.defId);
       const maxed = isSkillMaxed(si);
-      slot.className = 'skill-slot filled r-'+sd.rarity+(maxed?' maxed':'');
+      slot.className = 'skill-slot filled '+themeCls(sd)+(maxed?' maxed':'');
       slot.innerHTML = `<div class="sstars">${'★'.repeat(si.star)}</div><span class="type-tag tag-skill">Skill</span><div class="sic">${sd.icon}</div><div class="sname">${sd.name}</div><div class="slvl">${maxed?'MAX':'Lv'+si.level}</div>`;
       slot.addEventListener('click', ()=>showSkillDetail(h, i, si));
     } else {
@@ -1617,14 +1696,14 @@ function showSkillDetail(h, slotIndex, si){
   overlay.style.zIndex = '150';
   overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:380px;">
     <div style="display:flex;gap:12px;align-items:center;">
-      <div class="portrait r-${sd.rarity}${maxed?' maxed':''}" style="width:52px;height:52px;font-size:22px;flex-shrink:0;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+      <div class="portrait ${themeCls(sd)}${maxed?' maxed':''}" style="width:52px;height:52px;font-size:22px;flex-shrink:0;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
       <div style="min-width:0;">
         <h3 class="display" style="font-size:16px;color:var(--bone);">${sd.name}${maxed?' <span class="max-badge">MAX</span>':''}</h3>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="rarity-text" style="--rc:${rarityColorRaw(sd.rarity)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;"><span class="rarity-text" style="--rc:${accentColor(sd)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}</div>
       </div>
     </div>
     <div style="font-size:12.5px;color:var(--muted);margin-top:12px;font-style:italic;">"${sd.desc}"</div>
-    <div style="font-size:12px;color:var(--bone);margin-top:10px;line-height:1.55;background:var(--void-2);border:1px solid var(--line-soft);border-radius:10px;padding:10px 11px;">${skillEffectSummary(sd)}</div>
+    <div style="font-size:12px;color:var(--bone);margin-top:10px;line-height:1.55;background:var(--void-2);border:1px solid var(--line-soft);border-radius:10px;padding:10px 11px;">${skillEffectSummary(sd, si)}</div>
     <button class="btn btn-primary btn-block btn-sm" style="margin-top:14px;" id="btnSkillDetailChange">Change Skill</button>
     <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="btnSkillDetailClose">Close</button>
   </div>`;
@@ -1667,7 +1746,7 @@ function renderRosterList(){
       ${portraitEl(def,h.star,46)}
       <div class="ri-info">
         <div class="ri-name">${def.name} ${h.iid===S.activeHeroId?'<span class="ri-active-badge">ACTIVE</span>':''}</div>
-        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(def.rarity)}">${RARITY[def.rarity].label}</span> · Lv.${h.level} · ${h.star}★</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${accentColor(def)}">${RARITY[def.rarity].label}</span> · Lv.${h.level} · ${h.star}★</div>
       </div>
       <div class="ri-power">${fmtNum(pwr)}<div style="font-size:9px;color:var(--muted);font-weight:600;">POWER</div></div>
     `;
@@ -1698,11 +1777,11 @@ function openSlotPicker(h, slotIndex){
     const equippedElsewhere = findEquippedLocation(si.iid);
     const isHere = si.iid===currentIid;
     return `<div class="roster-item" data-iid="${si.iid}" style="cursor:pointer;">
-      <div class="portrait r-${sd.rarity}" style="width:44px;height:44px;font-size:18px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+      <div class="portrait ${themeCls(sd)}" style="width:44px;height:44px;font-size:18px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
       <div class="ri-info">
         <div class="ri-name">${sd.name}${isSkillMaxed(si)?' <span class="max-badge">MAX</span>':''}</div>
-        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(sd.rarity)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}${equippedElsewhere&&!isHere?' · equipped elsewhere':''}${isHere?' · in this slot':''}</div>
-        <div class="ri-sub" style="margin-top:2px;">${skillEffectSummary(sd)}</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${accentColor(sd)}">${RARITY[sd.rarity].label}</span> · Lv.${si.level} · ${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label}${equippedElsewhere&&!isHere?' · equipped elsewhere':''}${isHere?' · in this slot':''}</div>
+        <div class="ri-sub" style="margin-top:2px;">${skillEffectSummary(sd, si)}</div>
       </div>
     </div>`;
   }).join('') || '<div class="empty-hint">No skills owned yet — open crates in the Shop.</div>';
@@ -1847,41 +1926,46 @@ function renderTalents(){
 }
 
 // Builds a human-readable, numbers-included summary of what a skill actually does in battle.
-function skillEffectSummary(sd){
+// Pass the owned instance (si) to show its CURRENT numbers scaled by Level/Star; omit it (e.g.
+// for a bare skill definition with no owned copy) to show the base Lv.1/1★ numbers.
+function skillEffectSummary(sd, si){
+  const gm = si? skillGrowthMult(si) : 1;
+  const egm = si? skillEffectGrowth(si) : 1;
   const bits = [];
   if(sd.type==='passive'){
     if(sd.passive){
       const [key,val] = Object.entries(sd.passive)[0];
       const label = key==='crit'?'Crit Chance':key==='critDmg'?'Crit Damage':key==='atkPct'?'ATK':key==='defPct'?'DEF':key;
       const isPct = key==='atkPct'||key==='defPct';
-      bits.push(`Passive: <b>+${isPct?Math.round(val*100):val}${isPct?'%':''}</b> ${label}`);
+      const shown = val*gm;
+      bits.push(`Passive: <b>+${isPct?Math.round(shown*100):Math.round(shown*10)/10}${isPct?'%':''}</b> ${label}`);
     } else {
       bits.push('Passive effect');
     }
     bits.push('Always active — no cooldown or energy cost');
-    if(sd.signatureHero) bits.push(`+55% power on its bonded hero`);
+    if(sd.signatureHero) bits.push(`+${Math.round(((sd.signatureBoost||1.55)-1)*100)}% power on its bonded hero`);
     return bits.join(' · ');
   }
-  if(sd.type==='attack') bits.push(`Damage: <b>${Math.round(sd.power*100)}%</b> ATK`);
-  else if(sd.type==='heal') bits.push(`Heal: <b>${Math.round(sd.power*100)}%</b> ATK + 2% Max HP`);
+  if(sd.type==='attack') bits.push(`Damage: <b>${Math.round(sd.power*gm*100)}%</b> ATK`);
+  else if(sd.type==='heal') bits.push(`Heal: <b>${Math.round(sd.power*gm*100)}%</b> ATK + 2% Max HP`);
   else if(sd.type==='buff' && !sd.buff && !sd.shield) bits.push('Support effect');
-  if(sd.dot) bits.push(`Burn: <b>${Math.round(sd.dot.pct*100)}%</b> Max HP / turn for ${sd.dot.turns} turns`);
-  if(sd.debuff){ const s=sd.debuff; bits.push(`Enemy ${s.stat.toUpperCase()} <b>${Math.round(s.pct*100)}%</b> for ${s.turns} turns`); }
-  if(sd.buff){ const s=sd.buff; bits.push(`Self ${s.stat.toUpperCase()} <b>+${Math.round(s.pct*100)}%</b> for ${s.turns} turns`); }
-  if(sd.shield) bits.push(`Shield: <b>${Math.round(sd.shield*100)}%</b> Max HP`);
-  if(sd.lifesteal) bits.push(`Lifesteal: <b>${Math.round(sd.lifesteal*100)}%</b> of damage dealt`);
-  if(sd.heal && sd.type==='attack') bits.push(`Self-heal: <b>${Math.round(sd.heal*100)}%</b> of damage`);
-  if(sd.doubleHit) bits.push(`<b>${Math.round(sd.doubleHit*100)}%</b> chance to strike twice`);
+  if(sd.dot) bits.push(`Burn: <b>${Math.round(sd.dot.pct*egm*100)}%</b> Max HP / turn for ${sd.dot.turns} turns`);
+  if(sd.debuff){ [].concat(sd.debuff).forEach(s=>{
+    if(s.stat==='vuln') bits.push(`Marks the enemy: it takes <b>+${Math.round(s.pct*egm*100)}%</b> damage for ${s.turns} turns`);
+    else bits.push(`Enemy ${s.stat.toUpperCase()} <b>${Math.round(s.pct*egm*100)}%</b> for ${s.turns} turns`);
+  }); }
+  if(sd.dodge) bits.push(`Dodge: <b>${Math.round(Math.min(0.65,sd.dodge.pct*egm)*100)}%</b> chance to avoid each attack for ${sd.dodge.turns} turns`);
+  if(sd.punishDebuff) bits.push(`<b>+${Math.round(sd.punishDebuff*egm*100)}%</b> damage against debuffed or bleeding targets`);
+  if(sd.buff){ const s=sd.buff; bits.push(`Self ${s.stat.toUpperCase()} <b>+${Math.round(s.pct*egm*100)}%</b> for ${s.turns} turns`); }
+  if(sd.shield) bits.push(`Shield: <b>${Math.round(sd.shield*egm*100)}%</b> Max HP`);
+  if(sd.lifesteal) bits.push(`Lifesteal: <b>${Math.round(Math.min(0.9,sd.lifesteal*gm)*100)}%</b> of damage dealt`);
+  if(sd.heal && sd.type==='attack') bits.push(`Self-heal: <b>${Math.round(sd.heal*egm*100)}%</b> of damage`);
+  if(sd.doubleHit) bits.push(`<b>${Math.round(Math.min(0.95,sd.doubleHit*gm)*100)}%</b> chance to strike twice`);
   bits.push(`Cooldown: <b>${sd.cd}</b> turn${sd.cd===1?'':'s'}`, `Energy: <b>${sd.cost}</b>`);
-  if(sd.signatureHero) bits.push(`+55% power on its bonded hero`);
+  if(sd.signatureHero) bits.push(`+${Math.round(((sd.signatureBoost||1.55)-1)*100)}% power on its bonded hero`);
+  if(sd.scaling>1) bits.push(`<span style="color:#A66BFF;">Grows ${sd.scaling}× faster with Level &amp; Star</span>`);
+  if(si && (si.level>1 || si.star>1)) bits.push(`<span style="color:var(--good);">Scaled by Lv.${si.level}/${si.star}★</span>`);
   return bits.join(' · ');
-}
-// Passive stat trickle a specific owned instance of this skill contributes just by being equipped
-// (see heroComputedStats) — this is the part that actually scales with the skill's Level/Star.
-function skillTrickleSummary(si){
-  const p = skillPower(si);
-  const lf = p.levelFactor;
-  return `Equip bonus at current Lv.${si.level}/${si.star}★: <b>+${(1.2*lf).toFixed(1)}%</b> ATK, <b>+${(0.8*lf).toFixed(1)}%</b> HP, <b>+${(1.0*lf).toFixed(1)}%</b> DEF to its hero`;
 }
 
 function matPill(type, amt){
@@ -1966,14 +2050,13 @@ function renderUpgSkills(){
     const maxed = isSkillMaxed(si);
     return `<div class="card${maxed?' maxed':''}" style="margin-top:10px;">
       <div style="display:flex;gap:10px;align-items:center;">
-        <div class="portrait r-${sd.rarity}${maxed?' maxed':''}" style="width:48px;height:48px;font-size:20px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
+        <div class="portrait ${themeCls(sd)}${maxed?' maxed':''}" style="width:48px;height:48px;font-size:20px;"><span class="type-tag tag-skill">Skill</span>${sd.icon}<div class="stars">${starsHtml(si.star)}</div></div>
         <div style="flex:1;">
           <div class="ur-name">${sd.name} ${maxed?'<span class="max-badge">MAX</span>':''} ${loc?'<span style="font-size:9.5px;color:var(--good);font-weight:800;">EQUIPPED</span>':''}</div>
           <div class="ur-meta">${ELEMENTS[sd.el].sym} ${ELEMENTS[sd.el].label} · Lv.${si.level}/${cap} · ${sd.type}</div>
         </div>
       </div>
-      <div class="matchup-note" style="text-align:left;margin-top:8px;">${skillEffectSummary(sd)}</div>
-      <div class="matchup-note" style="text-align:left;margin-top:4px;color:var(--muted-2);">${skillTrickleSummary(si)}</div>
+      <div class="matchup-note" style="text-align:left;margin-top:8px;">${skillEffectSummary(sd, si)}</div>
       <div class="cost-line">
         ${canLevel? `<span class="cost-chip ${haveGold?'':'bad'}">${ICONS.gold} ${fmtNum(lc.gold)}</span>${matPill(lc.crystalType,lc.crystals)}` : `<span class="cost-chip">Level cap reached</span>`}
       </div>
@@ -2012,6 +2095,13 @@ function renderUpgSkills(){
 /* =========================================================================
    RENDER: SHOP PAGE
 ========================================================================= */
+function pityHtml(){
+  const opened = S.mythicOpened||0;
+  const inCycle = Math.min(opened, DIVINE_PITY-1);
+  const left = DIVINE_PITY - inCycle;
+  const msg = left===1 ? `<b>Your next chest is a guaranteed Divine card!</b>` : `Guaranteed Divine in <b>${left}</b> chests (any Divine you pull resets this).`;
+  return `<div class="pity-line">${msg} <span style="opacity:.8;">Progress ${inCycle}/${DIVINE_PITY}</span><div class="pity-bar"><i style="width:${Math.round(inCycle/DIVINE_PITY*100)}%"></i></div></div>`;
+}
 function renderShopPage(){
   const crateList = document.getElementById('crateList');
   crateList.innerHTML = CRATE_DEFS.map(c=>{
@@ -2031,6 +2121,7 @@ function renderShopPage(){
         </div>
       </div>
       <div class="odds-row">${oddsHtml}</div>
+      ${c.id==='mythic' ? pityHtml() : ''}
       <div class="crate-buy">
         <button class="btn btn-primary" style="flex:1;" data-crate="${c.id}" data-n="1" ${afford?'':'disabled'}>Open ×1 — ${curIcon} ${fmtNum(c.cost)}</button>
         <button class="btn btn-ghost" style="flex:1;" data-crate="${c.id}" data-n="10" ${have>=c.cost*10?'':'disabled'}>×10 — ${curIcon} ${fmtNum(c.cost*10)}</button>
@@ -2087,13 +2178,21 @@ function openCrate(cid, n){
 
   const pulls=[];
   for(let i=0;i<n;i++){
-    const rarity = weightedPick(c.odds);
+    let rarity = null, guaranteed = false;
+    if(c.id==='mythic'){
+      S.mythicOpened = (S.mythicOpened||0) + 1; // chests since the last Divine
+      if(S.mythicOpened >= DIVINE_PITY){ rarity='divine'; guaranteed=true; }
+    }
+    if(!rarity) rarity = weightedPick(c.odds);
+    if(c.id==='mythic' && rarity==='divine') S.mythicOpened = 0; // any Divine (lucky or guaranteed) resets the counter
     const isChar = Math.random()<0.4;
     const pool = isChar? CHAR_DEFS.filter(d=>d.rarity===rarity) : SKILL_DEFS.filter(d=>d.rarity===rarity);
     const fallbackPool = isChar? CHAR_DEFS: SKILL_DEFS;
     const chosenDef = (pool.length? pool: fallbackPool)[Math.floor(Math.random()*(pool.length||fallbackPool.length))];
     const kind = isChar? 'char':'skill';
-    pulls.push(grantPull(kind, chosenDef));
+    const pull = grantPull(kind, chosenDef);
+    pull.guaranteed = guaranteed;
+    pulls.push(pull);
   }
   save();
   showPullOverlay(pulls);
@@ -2109,7 +2208,7 @@ function grantPull(kind, def){
       S.heroes.push({iid, defId:def.id, level:1, star:1, xp:0, slots:[null,null,null,null,null,null]});
       isNew=true;
     } else {
-      S.shards[def.id] = (S.shards[def.id]||0) + 2;
+      S.shards[def.id] = (S.shards[def.id]||0) + 3;
       S.gold += Math.round(80*RARITY[def.rarity].mult);
     }
   } else {
@@ -2119,7 +2218,7 @@ function grantPull(kind, def){
       S.skills.push({iid, defId:def.id, level:1, star:1});
       isNew=true;
     } else {
-      S.shards[def.id] = (S.shards[def.id]||0) + 2;
+      S.shards[def.id] = (S.shards[def.id]||0) + 3;
       S.gold += Math.round(50*RARITY[def.rarity].mult);
     }
   }
@@ -2132,11 +2231,11 @@ function showPullOverlay(pulls){
   stage.innerHTML='';
   pulls.forEach((p,idx)=>{
     const el = document.createElement('div');
-    el.className='pull-card r-'+p.def.rarity;
+    el.className='pull-card '+themeCls(p.def);
     el.style.animationDelay = (idx*0.08)+'s';
     const icon = p.kind==='char'? p.def.icon : p.def.icon;
     const tag = p.kind==='char'? '<span class="type-tag tag-hero">Hero</span>' : '<span class="type-tag tag-skill">Skill</span>';
-    el.innerHTML = `${tag}<div class="pic">${icon}</div><div class="pn">${p.def.name}</div><div class="pr">${RARITY[p.def.rarity].label}</div><div class="pnew">${p.isNew? (p.kind==='char'?'NEW HERO':'NEW SKILL') : '+2 SHARDS'}</div>`;
+    el.innerHTML = `${tag}<div class="pic">${icon}</div><div class="pn">${p.def.name}</div><div class="pr">${RARITY[p.def.rarity].label}</div><div class="pnew">${p.isNew? (p.kind==='char'?'NEW HERO':'NEW SKILL') : '+3 SHARDS'}</div>${p.guaranteed?'<div class="pnew" style="color:var(--c-divine);">DIVINE GUARANTEE</div>':''}`;
     stage.appendChild(el);
   });
   overlay.classList.add('show');
@@ -2169,8 +2268,8 @@ function targetWinrate(){
 }
 // Bisect the bot's strength multiplier until simulated fights match the target win chance
 function calibrateBot(bot, h, target){
-  let lo=Math.log(0.12), hi=Math.log(9);
-  for(let i=0;i<8;i++){
+  let lo=Math.log(0.12), hi=Math.log(40);
+  for(let i=0;i<9;i++){
     const mid=(lo+hi)/2; bot.overdrive=Math.exp(mid);
     if(estimateWin(h,bot,24)>target) lo=mid; else hi=mid;
   }
@@ -2223,6 +2322,7 @@ function generateBot(targetPower, acctLvl){
 }
 
 function botComputedStats(bot){
+  if(bot.statsOverride) return Object.assign({}, bot.statsOverride); // bosses use fixed, hand-tuned stats
   const rar = RARITY[bot.def.rarity];
   const starMult = STAR_STAT_MULT[bot.star];
   const lvlMult = 1+(bot.level-1)*0.085;
@@ -2232,11 +2332,9 @@ function botComputedStats(bot){
   let spd=bot.def.base.spd*(1+(bot.star-1)*0.05)*(1+(bot.level-1)*0.01);
   let crit=bot.def.base.crit, critDmg=bot.def.base.critDmg;
   bot.skills.forEach(si=>{
-    const lf=(si.level-1)+(si.star-1)*4;
-    atk*=1+0.012*lf; hp*=1+0.008*lf; dfn*=1+0.010*lf;
     const sd = si.def;
     if(sd.passive){
-      const scale = 1+lf*0.035;
+      const scale = skillGrowthMult(si);
       if(sd.passive.crit)    crit    += sd.passive.crit*scale;
       if(sd.passive.critDmg) critDmg += sd.passive.critDmg*scale;
       if(sd.passive.atkPct)  atk     *= 1+sd.passive.atkPct*scale;
@@ -2281,7 +2379,7 @@ function renderBattlePage(){
     : `↯ <b style="color:var(--bad);">${bot.name} acts first</b> — their Combat Speed (${fmtNum(bSpd)}) beats yours (${fmtNum(pSpd)}). Train Combat Speed in Forge → Stats.`;
 
   const card = document.getElementById('matchCard');
-  card.className = 'card hero-hero r-'+def.rarity;
+  card.className = 'card hero-hero '+themeCls(def);
   card.innerHTML = `
     <div class="vs-wrap">
       <div class="fighter">
@@ -2310,7 +2408,192 @@ function renderBattlePage(){
   renderHelperCard();
   renderLastResultCard();
   renderFriendDuelCard();
+  renderBossCard();
   renderTrophyPathCard();
+}
+
+
+/* =========================================================================
+   BOSS RUSH — 100 escalating bosses, one-time rewards for every boss
+========================================================================= */
+const BOSS_COUNT = 100;
+// Boss strength: s(n) grows geometrically (boss 1 -> boss 70 -> boss 100). Tuned by simulation:
+// a fresh hero can beat boss 1, and only a fully maxed Grim Reaper + Shadow pair (one as helper) beats boss 100.
+const BOSS_CFG = {s1: 1, s100: 520, hp: 700, atk: 48, def: 40, spd1: 60, spd100: 250, crit1: 4, crit100: 40, critDmgGain: 100, gold0: 180, goldGrow: 1.055, s70: 50};
+const BOSS_REALMS = [
+  {realm:'Whispering Meadow', noun:'Slime',  guardian:'The Slime King',       icon:'◉', rarity:'common'},
+  {realm:'Goblin Warrens',    noun:'Goblin', guardian:'The Goblin Warlord',   icon:'♞', rarity:'common'},
+  {realm:'Howling Woods',     noun:'Wolf',   guardian:'The Alpha Wolf',       icon:'☘', rarity:'rare'},
+  {realm:'Stone Halls',       noun:'Golem',  guardian:'The Stone Colossus',   icon:'♜', rarity:'rare'},
+  {realm:'Drowned Crypt',     noun:'Wraith', guardian:'The Drowned Queen',    icon:'☠', rarity:'epic'},
+  {realm:'Ember Peaks',       noun:'Drake',  guardian:'The Ember Wyrm',       icon:'☄', rarity:'epic'},
+  {realm:'Titan Wastes',      noun:'Titan',  guardian:'The Titan Sovereign',  icon:'♛', rarity:'legendary'},
+  {realm:'Abyssal Rift',      noun:'Demon',  guardian:'The Demon Emperor',    icon:'✹', rarity:'legendary'},
+  {realm:'Celestial Spire',   noun:'Seraph', guardian:'The Fallen Seraph',    icon:'✦', rarity:'mythic'},
+  {realm:'Edge of Eternity',  noun:'Void Lord', guardian:'The Final Champion', icon:'☯', rarity:'divine'},
+];
+const BOSS_PREFIX = ['Lesser','Feral','Grim','Veteran','Savage','Elder','Ancient','Dread','Arch'];
+const BOSS_EL = ['iron','fire','frost','storm','radiant','void'];
+function bossRng(seed){ let a=seed>>>0; return function(){ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^(t>>>15),t|1); t^=t+Math.imul(t^(t>>>7),t|61); return ((t^(t>>>14))>>>0)/4294967296; }; }
+function bossStats(n){
+  const t=(n-1)/(BOSS_COUNT-1), C=BOSS_CFG;
+  // two-stage curve: bosses 1-70 climb through the normal hero ladder, bosses 71-100 are Divine-tier territory
+  const s = n<=70 ? C.s1*Math.pow(C.s70/C.s1,(n-1)/69) : C.s70*Math.pow(C.s100/C.s70,(n-70)/30);
+  return {hp:Math.round(C.hp*s), atk:Math.round(C.atk*s), def:Math.round(C.def*s),
+    spd:Math.round(C.spd1+(C.spd100-C.spd1)*t), crit:Math.round(C.crit1+(C.crit100-C.crit1)*t),
+    critDmg:Math.round(150+C.critDmgGain*t)};
+}
+function makeBoss(n){
+  const tier=Math.floor((n-1)/10), idx=(n-1)%10, realm=BOSS_REALMS[tier], guardian=(idx===9);
+  const name = guardian ? realm.guardian : BOSS_PREFIX[idx]+' '+realm.noun;
+  const el = BOSS_EL[(n+tier)%6];
+  const def = {id:'boss_'+n, name, rarity:realm.rarity, cls:'boss', el, icon:realm.icon, base:{hp:1,atk:1,def:1,spd:1,crit:0,critDmg:150}};
+  const star = 1+Math.min(4,Math.floor(tier/2));
+  // Every boss uses a fixed, hand-built kit that grows with its realm (no random kits), so difficulty rises smoothly.
+  const mk = (key, nm, icon, body) => Object.assign({id:'boss_'+n+'_'+key, name:nm, rarity:realm.rarity, el, icon, cost:2, cd:1, power:1}, body);
+  const noun = realm.noun;
+  const kit = [ mk('a', noun+' Strike', '⚔', {type:'attack', power:1.25, cost:2, cd:1}) ];
+  if(tier>=1) kit.push(mk('b', noun+' Fury', '✸', {type:'attack', power:1.7, cost:3, cd:3}));
+  if(tier>=2) kit.push(mk('c', noun+' Ward', '◈', {type:'buff', power:0, cost:3, cd:4, buff:{stat:'def',pct:.25,turns:3}, shield:.16}));
+  if(tier>=3) kit.push(mk('d', noun+' Venom', '☣', {type:'attack', power:1.1, cost:2, cd:3, dot:{stat:'burn',pct:.05,turns:3}}));
+  if(tier>=5) kit.push(mk('e', noun+' Curse', '☠', {type:'attack', power:1.3, cost:3, cd:3, debuff:{stat:'def',pct:-.2,turns:2}}));
+  if(guardian || tier>=8) kit.push(mk('f', noun+' Doom', '☄', {type:'attack', power:2.3, cost:4, cd:4, doubleHit:.25}));
+  const chosen = kit;
+  const sLevel = Math.max(1, Math.round(levelCapFor(star)*0.8));
+  const perkTable = [[],[],['ward'],['ward'],['ward','prec'],['ward','prec'],['ward','prec','vamp'],['ward','prec','vamp'],['ward','prec','vamp'],['ward','prec','vamp']];
+  const perks = perkTable[tier].slice();
+  if(guardian && tier>=1 && !perks.includes('haste')) perks.push('haste');
+  return {name, defId:def.id, def, star, level:1, overdrive:1, perks,
+    skills: chosen.map(sd=>({def:sd, level:sLevel, star})),
+    statsOverride: bossStats(n), isBoss:n, realm:realm.realm, guardian};
+}
+function bossReward(n){
+  const tier=Math.floor((n-1)/10), guardian=(n%10===0);
+  let gold=Math.round(BOSS_CFG.gold0*Math.pow(BOSS_CFG.goldGrow,n-1));
+  let gems=10+3*n, xp=30+10*n, mats=2+Math.floor(n/4);
+  const matType=['crystalCommon','crystalCommon','crystalRare','crystalRare','crystalEpic','crystalEpic','crystalEpic','crystalLegendary','crystalLegendary','crystalLegendary'][tier];
+  if(guardian){ gold*=2; gems*=3; mats*=2; }
+  return {gold, gems, xp, matType, mats, guardian};
+}
+function bossEstimate(h, boss, n){
+  let w=0;
+  for(let i=0;i<n;i++) if(simulateFight(buildCombatant('player',h,null), buildCombatant('enemy',null,boss)).win) w++;
+  return w/n;
+}
+function bossRewardChips(r){
+  const mat = MATERIAL_DEFS.find(m=>m.id===r.matType);
+  return `<span class="boss-chip">${ICONS.gold} ${fmtNum(r.gold)}</span><span class="boss-chip">${ICONS.gem} ${fmtNum(r.gems)}</span><span class="boss-chip">${mat.icon} ×${r.mats}</span><span class="boss-chip">${ICONS.xp} ${fmtNum(r.xp)} XP</span>`;
+}
+function renderBossCard(){
+  const card = document.getElementById('bossCard');
+  if(!card) return;
+  const cleared = S.bossCleared||0;
+  const sub = document.getElementById('bossSub'); if(sub) sub.textContent = cleared+' / '+BOSS_COUNT+' defeated';
+  const bar = `<div class="boss-progress"><i style="width:${Math.round(cleared/BOSS_COUNT*100)}%"></i></div>`;
+  if(cleared>=BOSS_COUNT){
+    card.innerHTML = `<div class="boss-done"><div style="font-size:38px;">👑</div>
+      <div class="display" style="font-size:18px;color:var(--bone);margin:6px 0 4px;">There is no competition for you</div>
+      <div style="font-size:12px;color:var(--muted);">All ${BOSS_COUNT} bosses have fallen.</div></div>${bar}
+      <button class="btn btn-ghost btn-block btn-sm" style="margin-top:10px;" id="btnBossList">View all bosses</button>`;
+    document.getElementById('btnBossList').addEventListener('click', openBossList);
+    return;
+  }
+  const n = cleared+1, boss = makeBoss(n), r = bossReward(n), h = activeHero();
+  const st = bossStats(n);
+  const wr = Math.round(bossEstimate(h,boss,30)*100);
+  const verdict = wr>=70?'Favored':(wr>=45?'Even fight':(wr>=15?'Risky':'Far too strong — get stronger first'));
+  const pSpd = combinedStats(h).spd;
+  const skillIcons = boss.skills.map(s=>s.def.icon).join(' ');
+  const perkTxt = boss.perks.length ? ' · '+boss.perks.map(p=>PERKS[p].sym+' '+PERKS[p].label).join(', ') : '';
+  card.innerHTML = `
+    <div style="display:flex;gap:12px;align-items:center;">
+      ${portraitEl(boss.def, boss.star, 64)}
+      <div style="min-width:0;">
+        <div class="fighter-name">#${n} · ${boss.name}${boss.guardian?' 👑':''}</div>
+        <div class="fighter-power">${boss.realm} · ${ELEMENTS[boss.def.el].sym} ${ELEMENTS[boss.def.el].label}</div>
+        <div class="fighter-power">HP ${fmtNum(st.hp)} · ATK ${fmtNum(st.atk)} · DEF ${fmtNum(st.def)} · SPD ${fmtNum(st.spd)}</div>
+      </div>
+    </div>
+    ${bar}
+    <div class="matchup-note" style="margin-top:10px;">Matchup: <b>${verdict}</b>${pSpd<st.spd?'<br>↯ The boss acts first.':'<br>↯ You act first.'}</div>
+    <div class="matchup-note" style="margin-top:6px;">Their loadout: ${skillIcons}${perkTxt}</div>
+    <div style="font-size:11.5px;font-weight:800;color:var(--muted);margin-top:12px;">First-clear reward${boss.guardian?' (Guardian bonus!)':''}</div>
+    <div class="boss-rewards">${bossRewardChips(r)}</div>
+    <button class="btn btn-danger btn-block" style="margin-top:12px;" id="btnBossFight">${ICONS.sword} Fight Boss #${n}</button>
+    <button class="btn btn-ghost btn-block btn-sm" style="margin-top:8px;" id="btnBossList">View all bosses</button>`;
+  document.getElementById('btnBossFight').addEventListener('click', startBossFlow);
+  document.getElementById('btnBossList').addEventListener('click', openBossList);
+}
+function openBossList(){
+  const cleared = S.bossCleared||0;
+  let rows='';
+  for(let n=1;n<=BOSS_COUNT;n++){
+    const b=makeBoss(n), r=bossReward(n), state = n<=cleared?'cleared':(n===cleared+1?'next':'locked');
+    const mark = state==='cleared'?'✔':(state==='next'?'▶':'🔒');
+    rows += `<div class="boss-row ${state}"><span class="bn">${n}</span>
+      <div style="flex:1;min-width:0;"><div style="font-weight:800;color:var(--bone);">${b.name}${b.guardian?' 👑':''}</div>
+      <div style="font-size:10.5px;color:var(--muted);">${b.realm} · PWR ${fmtNum(botPower(b))}</div></div>
+      <div style="text-align:right;font-size:10.5px;color:var(--muted);">${ICONS.gold} ${fmtNum(r.gold)}<br>${ICONS.gem} ${fmtNum(r.gems)}</div>
+      <span style="width:20px;text-align:center;">${mark}</span></div>`;
+  }
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show'; overlay.style.zIndex='160';
+  overlay.innerHTML = `<div class="result-card" style="text-align:left;max-width:440px;max-height:82vh;overflow:auto;">
+    <div class="detail-back" id="bossListClose">← Close</div>
+    <h3 class="display" style="font-size:17px;color:var(--bone);margin-bottom:4px;">Boss Rush · ${BOSS_COUNT} Bosses</h3>
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Each boss pays out once, on your first victory. Bosses only get stronger — and their rewards bigger.</div>${rows}</div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#bossListClose').addEventListener('click', ()=>overlay.remove());
+  const nx = overlay.querySelector('.boss-row.next'); if(nx) nx.scrollIntoView({block:'center'});
+}
+function startBossFlow(){
+  if(battleInProgress) return;
+  const n = (S.bossCleared||0)+1; if(n>BOSS_COUNT) return;
+  const h = activeHero();
+  if(equippedSkills(h).filter(Boolean).length===0){ toast('Equip at least one skill before battling!'); return; }
+  battleInProgress = true;
+  const boss = makeBoss(n);
+  const result = simulateFight(buildCombatant('player',h,null), buildCombatant('enemy',null,boss));
+  renderArenaShell(h, boss, result);
+  const mc = document.getElementById('matchCard'); if(mc && mc.scrollIntoView) mc.scrollIntoView({behavior:'smooth',block:'start'});
+  playbackLog(result, ()=>finishBossBattle(result, boss));
+}
+function finishBossBattle(result, boss){
+  battleInProgress = false;
+  const n = boss.isBoss;
+  let rewards = null, leveled = false;
+  if(result.win && n===(S.bossCleared||0)+1){
+    rewards = bossReward(n);
+    S.bossCleared = n;
+    S.gold += rewards.gold; S.gems += rewards.gems;
+    S.mats[rewards.matType] = (S.mats[rewards.matType]||0)+rewards.mats;
+    S.acctXp += rewards.xp;
+    while(S.acctXp >= acctXpNeeded(S.acctLvl)){ S.acctXp -= acctXpNeeded(S.acctLvl); S.acctLvl++; leveled=true; }
+    save();
+  }
+  const overlay = document.createElement('div');
+  overlay.className='result-overlay show'; overlay.style.zIndex='160';
+  let body;
+  if(rewards){
+    const mat = MATERIAL_DEFS.find(m=>m.id===rewards.matType);
+    body = `<div class="reward-item"><span class="ic">${ICONS.gold}</span> <span>Gold</span><b style="margin-left:auto;">+${fmtNum(rewards.gold)}</b></div>
+      <div class="reward-item"><span class="ic">${ICONS.gem}</span> <span>Gems</span><b style="margin-left:auto;">+${fmtNum(rewards.gems)}</b></div>
+      <div class="reward-item"><span class="ic">${mat.icon}</span> <span>${mat.name}</span><b style="margin-left:auto;">+${rewards.mats}</b></div>
+      <div class="reward-item"><span class="ic">${ICONS.xp}</span> <span>Account XP</span><b style="margin-left:auto;">+${rewards.xp}</b></div>
+      <div class="matchup-note" style="margin-top:12px;">${n>=BOSS_COUNT ? 'There is no competition for you.' : 'Next up: <b>#'+(n+1)+' '+makeBoss(n+1).name+'</b>'}${leveled?' · Account Level Up!':''}</div>`;
+  } else if(result.win){
+    body = `<div class="matchup-note" style="margin-top:14px;">Already cleared — no further reward.</div>`;
+  } else {
+    body = `<div class="matchup-note" style="margin-top:14px;">Boss #${n} was too strong this time. Level up your hero, skills and helper, then try again. Rewards are paid on the first victory only.</div>`;
+  }
+  overlay.innerHTML = `<div class="result-card">
+    <div class="result-title ${result.win?'win':'lose'}" style="font-size:22px;">${result.win?'BOSS DEFEATED':'DEFEAT'}</div>
+    <div class="result-sub">#${n} ${boss.name} · ${result.round} rounds · your HP left ${result.hpPct}%</div>
+    <div style="margin-top:12px;">${body}</div>
+    <button class="btn btn-primary btn-block" style="margin-top:18px;" id="bossResultClose">Continue</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.querySelector('#bossResultClose').addEventListener('click', ()=>{ overlay.remove(); renderAll(); });
 }
 
 /* =========================================================================
@@ -2507,7 +2790,7 @@ function renderHelperCard(){
       ${portraitEl(hd,helper.star,46)}
       <div class="ri-info">
         <div class="ri-name">${hd.name} <span class="ri-active-badge">HELPER · ${Math.round(helperContribution(h,helper)*100)}%</span></div>
-        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(hd.rarity)}">${RARITY[hd.rarity].label}</span> · Lv.${helper.level} · ${helper.star}★</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${accentColor(hd)}">${RARITY[hd.rarity].label}</span> · Lv.${helper.level} · ${helper.star}★</div>
       </div>
       <button class="btn btn-ghost btn-sm" id="btnClearHelper">Remove</button>
     </div>`;
@@ -2520,10 +2803,13 @@ function renderHelperCard(){
       ${portraitEl(xd,x.star,40)}
       <div class="ri-info">
         <div class="ri-name">${xd.name}</div>
-        <div class="ri-sub"><span class="rarity-text" style="--rc:${rarityColorRaw(xd.rarity)}">${RARITY[xd.rarity].label}</span> · Lv.${x.level} · ${x.star}★ · PWR ${fmtNum(heroPower(x))}</div>
+        <div class="ri-sub"><span class="rarity-text" style="--rc:${accentColor(xd)}">${RARITY[xd.rarity].label}</span> · Lv.${x.level} · ${x.star}★ · PWR ${fmtNum(heroPower(x))}</div>
       </div>
     </div>`;
   }).join('');
+  if(helper && isDivineDuo(charDef(h.defId), charDef(helper.defId))){
+    rowHtml += `<div class="duo-note">☯ <b>Divine Duo active</b> — both Divine heroes together: the helper lends far more of its stats, plus bonus ATK and Crit, and the assist strike hits harder every 2nd round.</div>`;
+  }
   card.innerHTML = rowHtml + (pickList? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:7px;max-height:220px;overflow-y:auto;">${pickList}</div>` : '');
   const clearBtn = document.getElementById('btnClearHelper');
   if(clearBtn) clearBtn.addEventListener('click', ()=>{ S.helperHeroId=null; save(); renderHelperCard(); renderBattlePage(); toast('Helper removed'); });
@@ -2547,10 +2833,12 @@ function myFriendCode(){
   const payload = {
     v:1,
     username: S.username || 'Commander',
-    heroName: def.name, heroIcon: def.icon, heroEl: def.el, heroRarity: def.rarity,
+    heroDefId: def.id,
+    heroName: def.name, heroIcon: def.icon, heroEl: def.el, heroRarity: def.rarity, heroTheme: def.theme||null,
     star: h.star,
     stats: combinedStats(h),
     skillDefIds: equippedSkills(h).filter(Boolean).map(si=>si.defId),
+    skills: equippedSkills(h).filter(Boolean).map(si=>({id:si.defId, level:si.level, star:si.star})), // levels/stars drive skill scaling
     perks: heroPerks(h),
   };
   try{ return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))); }
@@ -2601,9 +2889,17 @@ function openFriendDuelModal(){
   });
 }
 function buildFriendCombatant(data){
-  const def = {id:'friend', name:data.heroName||'Friend', icon:data.heroIcon||'⚔', el:data.heroEl||'iron', rarity:data.heroRarity||'common', cls:'friend'};
+  // keep the real hero id (when known) so signature skills (e.g. Shadow's / Grim Reaper's sets) get their bonded-hero boost
+  const def = {id:(data.heroDefId && charDef(data.heroDefId)) ? data.heroDefId : 'friend', name:data.heroName||'Friend', icon:data.heroIcon||'⚔', el:data.heroEl||'iron', rarity:data.heroRarity||'common', theme:data.heroTheme||undefined, cls:'friend'};
   const st = Object.assign({hp:500,atk:50,def:30,spd:80,crit:5,critDmg:150}, data.stats||{});
-  const skills = (data.skillDefIds||[]).map(id=>{ const sd=skillDef(id); return sd? {def:sd, cdLeft:0} : null; }).filter(Boolean);
+  // skills keep their Level & Star, exactly like on the sender's side (older codes without them fall back to Lv.1 / 1★)
+  const skillSrc = (Array.isArray(data.skills) && data.skills.length) ? data.skills : (data.skillDefIds||[]).map(id=>({id, level:1, star:1}));
+  const skills = skillSrc.map(x=>{
+    const sd = skillDef(x.id); if(!sd) return null;
+    const star = Math.max(1, Math.min(5, Math.round(+x.star||1)));
+    const level = Math.max(1, Math.min(levelCapFor(star), Math.round(+x.level||1)));
+    return {def:sd, cdLeft:0, inst:{defId:sd.id, def:sd, level, star}};
+  }).filter(Boolean);
   const perks = data.perks||[];
   const c = {side:'enemy', name:data.username||def.name, def, star:data.star||1, base:Object.assign({},st),
     hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?2:0, statuses:[], skills, basicPower:0.9, perks, assist:null};
@@ -2644,6 +2940,7 @@ function helperContribution(h, helper){
   const a=charDef(h.defId), b=charDef(helper.defId);
   if(a.el===b.el) c += 0.10;   // same element
   if(a.cls===b.cls) c += 0.05; // same class
+  if(isDivineDuo(a,b)) c += 0.3;   // Divine Duo: The Grim Reaper + Shadow
   return c;
 }
 function combinedStats(h){
@@ -2651,12 +2948,13 @@ function combinedStats(h){
   const helper = (S.helperHeroId && getHero(S.helperHeroId)) ? getHero(S.helperHeroId) : null;
   if(!helper) return base;
   const hs = heroComputedStats(helper), c = helperContribution(h,helper);
+  const duo = isDivineDuo(charDef(h.defId), charDef(helper.defId));
   return {
     hp: Math.round(base.hp + hs.hp*c),
-    atk: Math.round(base.atk + hs.atk*c),
+    atk: Math.round((base.atk + hs.atk*c)*(duo?1.1:1)),
     def: Math.round(base.def + hs.def*c),
     spd: Math.round(base.spd + hs.spd*c*0.4),
-    crit: Math.min(75, Math.round((base.crit + hs.crit*c*0.5)*10)/10),
+    crit: Math.min(75, Math.round((base.crit + hs.crit*c*0.5 + (duo?5:0))*10)/10),
     critDmg: Math.round(base.critDmg + hs.critDmg*c*0.3)
   };
 }
@@ -2691,7 +2989,7 @@ function buildCombatant(side, h, bot){
     skills = equippedSkills(h).filter(Boolean).map(si=>({inst:si, def:skillDef(si.defId), cdLeft:0}));
     perks = heroPerks(h); name = def.name; star = h.star;
     const helper = (S.helperHeroId && getHero(S.helperHeroId)) ? getHero(S.helperHeroId) : null;
-    if(helper){ const hs=heroComputedStats(helper), hd=charDef(helper.defId); assist={atk:hs.atk*(0.9+0.05*tal('bond')), el:hd.el, name:hd.name}; }
+    if(helper){ const hs=heroComputedStats(helper), hd=charDef(helper.defId); const duo=isDivineDuo(def,hd); assist={atk:hs.atk*(0.9+0.05*tal('bond'))*(duo?1.6:1), el:hd.el, name:hd.name, duo}; }
   } else {
     def = bot.def; st = Object.assign({}, botComputedStats(bot));
     skills = bot.skills.map(si=>({inst:si, def:si.def, cdLeft:0}));
@@ -2710,6 +3008,8 @@ function statusMultiplier(c, stat){
   c.statuses.filter(s=>s.stat===stat).forEach(s=> mult *= (1+s.pct));
   return mult;
 }
+function dodgeChance(c){ let keep=1; c.statuses.forEach(s=>{ if(s.type==='dodge') keep*=(1-s.chance); }); return Math.min(0.75, 1-keep); }
+function vulnMult(c){ return Math.min(1.6, statusMultiplier(c,'vuln')); } // 'Marked' targets take extra damage
 function effAtk(c){ return c.base.atk*statusMultiplier(c,'atk'); }
 function effDef(c){ return c.base.def*statusMultiplier(c,'def'); }
 function effSpd(c){ return c.base.spd*statusMultiplier(c,'spd'); }
@@ -2719,7 +3019,7 @@ function tickStatuses(c, log){
     if(s.stat==='burn' && s.turnsLeft>0){
       const dmg = Math.max(1, Math.round(c.maxHp*s.pct));
       c.hp = Math.max(0, c.hp-dmg);
-      log.push({type:'dot', actor:c.side, dmg, label:'Burn'});
+      log.push({type:'dot', actor:c.side, dmg, label:s.label||'Burn'});
     }
   });
   c.statuses.forEach(s=>{ s.turnsLeft--; });
@@ -2744,17 +3044,24 @@ function simulateFight(player, enemy){
   let round=0;
 
   // Defense's flat pre-multiplier subtraction above matters early on, but once
-  // skill power (up to ~2.6x), elemental advantage (1.25x), signature bonuses
-  // (1.55x) and crits (150%+) stack multiplicatively on a maxed attacker, that
-  // fixed subtraction becomes negligible next to the final number — which is
-  // why fully-built heroes could nearly one-shot anything. This second,
-  // percentage-based layer scales WITH the target's defense and is applied
-  // after all of those multipliers, so investing in DEF keeps mattering at
-  // every stage instead of being drowned out at max level.
+  // skill power, elemental advantage (1.25x), signature bonuses (1.55x), crits
+  // (150%+) and skill Level/Star growth all stack multiplicatively on a maxed
+  // attacker, that fixed subtraction becomes negligible next to the final
+  // number. Two safety nets keep fights readable even at the top end:
+  // (1) a percentage-based mitigation layer that scales WITH the target's
+  //     defense, applied after all multipliers, so DEF keeps mattering; and
+  // (2) a hard per-hit cap (% of the target's max HP) so no single hit —
+  //     however many multipliers line up — can delete a full-HP target in
+  //     one shot. Multi-turn fights stay possible, and heavily-invested
+  //     builds still hit noticeably harder; they just can't one-shot.
   const DEF_MITIGATION_K = 32000;
+  const MAX_HIT_FRAC = 0.60; // no single hit exceeds 60% of the target's max HP
   function computeDamage(attacker, target, mult, canCrit, el){
+    const dc = dodgeChance(target);
+    if(dc>0 && Math.random()<dc) return {dmg:0, crit:false, shieldAbs:0, dodged:true};
     let dmg = Math.max(1, effAtk(attacker)*mult - effDef(target)*0.5);
     dmg *= elemMult(el||attacker.def.el, target.def.el);
+    dmg *= vulnMult(target);
     if(attacker.perks.includes('exec') && target.hp/target.maxHp<0.35) dmg *= 1.3;
     let crit=false;
     if(canCrit && Math.random()*100 < (attacker.base.crit||0)){
@@ -2762,6 +3069,7 @@ function simulateFight(player, enemy){
     }
     const mitigation = effDef(target) / (effDef(target) + DEF_MITIGATION_K);
     dmg = Math.max(1, dmg * (1-mitigation));
+    dmg = Math.min(dmg, Math.max(1, Math.ceil(target.maxHp*MAX_HIT_FRAC)));
     let shieldAbs=0;
     const shield = target.statuses.find(s=>s.type==='shield');
     if(shield){
@@ -2796,7 +3104,7 @@ function simulateFight(player, enemy){
     const sk = pickSkill(attacker);
     if(!sk){
       const r = computeDamage(attacker, target, attacker.basicPower, true, attacker.def.el);
-      log.push({type:'basic', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:r.dmg, crit:r.crit, skillName:'Basic Strike'});
+      log.push({type:'basic', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:r.dmg, crit:r.crit, skillName:'Basic Strike', dodged:!!r.dodged});
       afterHit(attacker, target, r.dmg);
       return;
     }
@@ -2804,28 +3112,40 @@ function simulateFight(player, enemy){
     attacker.energy -= sk.def.cost;
     const sd = sk.def;
     // Signature bond: a divine skill cast by its bonded hero (e.g. Grim Reaper) is amplified.
-    const sig = (sd.signatureHero && attacker.def.id===sd.signatureHero) ? 1.55 : 1;
+    const sig = (sd.signatureHero && attacker.def.id===sd.signatureHero) ? (sd.signatureBoost||1.55) : 1;
+    // Leveling/starring a skill scales ITS OWN numbers directly: gm drives the skill's primary
+    // stat (its listed damage/heal %), egm is a softer curve for secondary effects (buffs,
+    // debuffs, dot, shield) so a maxed skill is clearly stronger without runaway numbers.
+    const gm = skillGrowthMult(sk.inst);
+    const egm = skillEffectGrowth(sk.inst);
     if(sd.type==='attack'){
       let hits=1;
-      if(sd.doubleHit && Math.random()<Math.min(0.95, sd.doubleHit*sig)) hits=2;
-      let totalDmg=0, anyCrit=false;
+      if(sd.doubleHit && Math.random()<Math.min(0.95, sd.doubleHit*sig*gm)) hits=2;
+      let totalDmg=0, anyCrit=false, landed=0;
+      // punishDebuff: bonus damage against targets that are already debuffed or bleeding
+      let pw = sd.power*sig*gm;
+      if(sd.punishDebuff && target.statuses.some(s=>s.type==='debuff'||s.type==='dot')) pw *= 1+sd.punishDebuff*egm;
       for(let i=0;i<hits;i++){
-        const r = computeDamage(attacker, target, sd.power*sig, true, sd.el);
-        totalDmg+=r.dmg; anyCrit = anyCrit||r.crit;
+        const r = computeDamage(attacker, target, pw, true, sd.el);
+        if(r.dodged) continue;
+        landed++; totalDmg+=r.dmg; anyCrit = anyCrit||r.crit;
       }
-      log.push({type:'skill', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:totalDmg, crit:anyCrit, skillName:sd.name, hits});
+      const allDodged = landed===0;
+      log.push({type:'skill', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:totalDmg, crit:anyCrit, skillName:sd.name, hits, dodged:allDodged});
+      if(allDodged) return; // every strike was dodged: no on-hit effects
       afterHit(attacker, target, totalDmg);
-      if(sd.dot){ target.statuses.push({stat:'burn', pct:sd.dot.pct*sig, turnsLeft:sd.dot.turns, type:'dot'}); }
-      if(sd.debuff){ target.statuses.push({stat:sd.debuff.stat, pct:sd.debuff.pct*sig, turnsLeft:sd.debuff.turns, type:'debuff'}); }
-      if(sd.lifesteal){ const heal=Math.round(totalDmg*Math.min(0.9,sd.lifesteal*sig)); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:'Siphon'}); }
-      if(sd.heal){ const heal=Math.round(effAtk(attacker)*sd.heal*sig); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name}); }
+      if(sd.dot){ target.statuses.push({stat:'burn', pct:sd.dot.pct*sig*egm, turnsLeft:sd.dot.turns, type:'dot', label:sd.dot.label}); }
+      if(sd.debuff){ [].concat(sd.debuff).forEach(db=>{ target.statuses.push({stat:db.stat, pct:db.pct*sig*egm, turnsLeft:db.turns, type:'debuff'}); }); }
+      if(sd.lifesteal){ const heal=Math.round(totalDmg*Math.min(0.9,sd.lifesteal*sig*gm)); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:'Siphon'}); }
+      if(sd.heal){ const heal=Math.round(effAtk(attacker)*sd.heal*egm*sig); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name}); }
     } else if(sd.type==='heal'){
-      const heal = Math.round(attacker.maxHp*0.02 + effAtk(attacker)*sd.power*sig);
+      const heal = Math.round(attacker.maxHp*0.02 + effAtk(attacker)*sd.power*sig*gm);
       attacker.hp = Math.min(attacker.maxHp, attacker.hp+heal);
       log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name});
     } else if(sd.type==='buff'){
-      if(sd.buff) attacker.statuses.push({stat:sd.buff.stat, pct:sd.buff.pct*sig, turnsLeft:sd.buff.turns, type:'buff'});
-      if(sd.shield){ attacker.statuses.push({type:'shield', amount:Math.round(attacker.maxHp*sd.shield*sig), turnsLeft:99}); }
+      if(sd.buff) attacker.statuses.push({stat:sd.buff.stat, pct:sd.buff.pct*sig*egm, turnsLeft:sd.buff.turns, type:'buff'});
+      if(sd.shield){ attacker.statuses.push({type:'shield', amount:Math.round(attacker.maxHp*sd.shield*sig*egm), turnsLeft:99}); }
+      if(sd.dodge){ attacker.statuses.push({type:'dodge', chance:Math.min(0.65, sd.dodge.pct*sig*egm), turnsLeft:sd.dodge.turns}); }
       log.push({type:'buff', actor:attacker.side, actorName:attacker.name, skillName:sd.name});
     }
   }
@@ -2838,8 +3158,8 @@ function simulateFight(player, enemy){
       act(actor, actor===player? enemy: player);
     });
     // helper assist strike every 3rd round
-    if(player.assist && round%3===0 && player.hp>0 && enemy.hp>0){
-      const ps = {base:{atk:player.assist.atk, crit:8, critDmg:150}, statuses:[], perks:[], def:{el:player.assist.el}};
+    if(player.assist && round%(player.assist.duo?2:3)===0 && player.hp>0 && enemy.hp>0){
+      const ps = {base:{atk:player.assist.atk, crit:player.assist.duo?25:8, critDmg:player.assist.duo?200:150}, statuses:[], perks:[], def:{el:player.assist.el}};
       const r = computeDamage(ps, enemy, 1.0, true, player.assist.el);
       log.push({type:'skill', actor:'player', actorName:player.name, target:'enemy', dmg:r.dmg, crit:r.crit, skillName:'Assist: '+player.assist.name, hits:1});
     }
@@ -2887,13 +3207,13 @@ function renderArenaShell(h, bot, result){
     <div class="arena" id="arenaBox">
       <button class="btn btn-ghost btn-sm skip-btn" id="btnSkipBattle">Skip ▶▶</button>
       <div class="combatant" id="c_player">
-        <div class="c-head"><div class="c-portrait r-${def.rarity}">${def.icon}</div><div class="c-name">${def.name}<br><small>YOU</small></div></div>
+        <div class="c-head"><div class="c-portrait ${themeCls(def)}">${def.icon}</div><div class="c-name">${def.name}<br><small>YOU</small></div></div>
         <div class="hpbar-wrap"><div class="hpbar" id="hp_player" style="width:100%"></div><div class="hp-text" id="hpt_player">${result.player.maxHp}/${result.player.maxHp}</div></div>
         <div class="energy-dots" id="en_player"></div>
         <div class="status-row" id="st_player"></div>
       </div>
       <div class="combatant" id="c_enemy">
-        <div class="c-head"><div class="c-portrait r-${bot.def.rarity}">${bot.def.icon}</div><div class="c-name">${bot.name}<br><small>OPPONENT</small></div></div>
+        <div class="c-head"><div class="c-portrait ${themeCls(bot.def)}">${bot.def.icon}</div><div class="c-name">${bot.name}<br><small>OPPONENT</small></div></div>
         <div class="hpbar-wrap"><div class="hpbar enemy" id="hp_enemy" style="width:100%"></div><div class="hp-text" id="hpt_enemy">${result.enemy.maxHp}/${result.enemy.maxHp}</div></div>
         <div class="energy-dots" id="en_enemy"></div>
         <div class="status-row" id="st_enemy"></div>
@@ -2941,6 +3261,7 @@ function playbackLog(result, onFinish){
       flashActor(evt.actor);
       return;
     }
+    if(evt.dodged){ floatDamage(evt.target, 0, 'dodge'); return; }
     // basic or skill (damage to target)
     if(evt.target==='enemy'){ curE=Math.max(0,curE-evt.dmg); updateHp('enemy',curE,maxHpE); }
     else { curP=Math.max(0,curP-evt.dmg); updateHp('player',curP,maxHpP); }
@@ -2961,8 +3282,8 @@ function floatDamage(side, dmg, crit){
   const container = document.getElementById('c_'+side);
   if(!container) return;
   const el = document.createElement('div');
-  el.className = 'dmg-float '+(crit==='heal'?'heal':(crit?'crit':'normal'));
-  el.textContent = (crit==='heal'? '+':'-') + Math.round(dmg) + (crit===true? '!':'');
+  el.className = 'dmg-float '+(crit==='dodge'?'dodge':(crit==='heal'?'heal':(crit?'crit':'normal')));
+  el.textContent = crit==='dodge' ? 'Dodge!' : ((crit==='heal'? '+':'-') + Math.round(dmg) + (crit===true? '!':''));
   el.style.left = (30+Math.random()*40)+'%';
   el.style.top = '8px';
   container.style.position='relative';
@@ -2986,6 +3307,7 @@ function logLineHtml(evt){
   if(evt.type==='heal') return `<b>${evt.actor==='player'?'You':'Opponent'}</b> use <b>${evt.skillName}</b>, healing <span class="dmg">${evt.dmg}</span>.`;
   if(evt.type==='buff') return `<b>${evt.actor==='player'?'You':'Opponent'}</b> cast <b>${evt.skillName}</b>.`;
   const who = evt.actor==='player'?'You':'Opponent';
+  if(evt.dodged) return `<b>${who}</b> use <b>${evt.skillName}</b> — <b>${evt.target==='player'?'you':'the opponent'}</b> <span style="color:#c4a6ff;font-weight:700;">dodged</span>!`;
   const critTxt = evt.crit? ' <b>CRITICAL!</b>':'';
   const hitsTxt = evt.hits===2? ' (double hit)':'';
   return `<b>${who}</b> use <b>${evt.skillName}</b> for <span class="dmg">${evt.dmg}</span> damage${hitsTxt}.${critTxt}`;
@@ -3022,8 +3344,8 @@ function finishBattle(result){
     const total = Object.values(dropOdds).reduce((a,b)=>a+b,0);
     Object.keys(dropOdds).forEach(k=>dropOdds[k]/=total);
     crystalType = weightedPick(dropOdds);
-    if(rankInfo.rank==='S' && Math.random()<0.5) gems = 8;
-    if(rankInfo.rank==='A' && Math.random()<0.25) gems = 4;
+    // every win pays out gems (better ranks pay more)
+    gems = WIN_GEMS[rankInfo.rank] || 0;
   }
 
   S.gold += gold;
@@ -3054,6 +3376,7 @@ function finishBattle(result){
   showResultOverlay(rankInfo, result, {gold,xp,crystals,crystalType,gems,trophies:trGain}, leveledUp);
 }
 
+const WIN_GEMS = {S: 20, A: 16, B: 12, C: 9}; // gems per victory, by rank
 function acctXpNeeded(lvl){ return Math.round(60*Math.pow(lvl,1.35)); }
 
 function showResultOverlay(rankInfo, result, rewards, leveledUp){
@@ -3215,6 +3538,66 @@ function showBackupCodeOverlay(codeStr){
     catch(e){ const ta=overlay.querySelector('.friend-code-box'); ta.select(); document.execCommand('copy'); toast('Backup code copied'); }
   });
 }
+
+/* ---------- SAVE EXPORT / IMPORT (works with or without a password) ---------- */
+async function currentSaveText(){
+  if(S.security && accountPassword){ return JSON.stringify(await encryptState(JSON.stringify(S), accountPassword)); } // stays encrypted
+  return JSON.stringify(S);
+}
+async function importSaveText(raw){
+  raw = (raw||'').trim();
+  if(!raw){ toast('Nothing to load'); return false; }
+  let wrapper; try{ wrapper = JSON.parse(raw); }catch(e){ toast('That is not a valid save'); return false; }
+  let next, pass = null;
+  try{
+    if(wrapper && wrapper.enc){
+      pass = prompt('Enter the password for this save:');
+      if(!pass) return false;
+      next = JSON.parse(await decryptState(wrapper, pass));
+    } else next = wrapper;
+  }catch(e){ toast('Wrong password or corrupted save'); return false; }
+  if(!next || !Array.isArray(next.heroes) || !Array.isArray(next.skills) || !next.heroes.length){ toast('This does not look like a Runeforge save'); return false; }
+  if(!confirm('Load this save? It replaces your current progress on this device.')) return false;
+  S = next; normalizeState();
+  S.heroes = S.heroes.filter(h=>charDef(h.defId));
+  S.skills = S.skills.filter(s=>skillDef(s.defId));
+  if(!S.heroes.length){ S = freshState(); save(); renderAll(); toast('Save had no usable heroes — started fresh'); return false; }
+  if(!getHero(S.activeHeroId)) S.activeHeroId = S.heroes[0].iid;
+  if(S.helperHeroId && !getHero(S.helperHeroId)) S.helperHeroId = null;
+  S.currentBot = null;
+  if(pass){ accountPassword = pass; S.security = {on:true}; } else { accountPassword = null; S.security = null; }
+  save(); renderAll();
+  toast('Save loaded');
+  return true;
+}
+document.getElementById('btnExportSaveFile').addEventListener('click', async ()=>{
+  try{
+    const text = await currentSaveText();
+    const blob = new Blob([text], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'runeforge-save-'+todayStr()+'.json';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    toast('Save file downloaded');
+  }catch(e){ toast('Could not create the file — try Copy Save Code instead'); }
+});
+document.getElementById('btnExportSaveCopy').addEventListener('click', async ()=>{
+  const text = await currentSaveText();
+  try{ await navigator.clipboard.writeText(text); toast('Save code copied'); }
+  catch(e){ showBackupCodeOverlay(text); }
+});
+document.getElementById('btnPickSaveFile').addEventListener('click', ()=>document.getElementById('importSaveFile').click());
+document.getElementById('importSaveFile').addEventListener('change', async (ev)=>{
+  const f = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if(!f) return;
+  try{ await importSaveText(await f.text()); }catch(e){ toast('Could not read that file'); }
+});
+document.getElementById('btnImportSaveText').addEventListener('click', async ()=>{
+  const ta = document.getElementById('importSaveText');
+  if(await importSaveText(ta.value)) ta.value = '';
+});
 
 const DEV_PASSWORD = 'reaper1993';
 function devToolsUnlocked(){ return sessionStorage.getItem('rf_dev_unlocked')==='1'; }
