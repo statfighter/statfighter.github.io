@@ -554,6 +554,29 @@ nav.tabbar{
 .log-wrap{max-height:150px;overflow-y:auto;margin-top:12px;padding-right:4px;}
 
 .skip-btn{position:absolute;top:12px;right:12px;z-index:6;}
+.round-badge{position:absolute;top:12px;left:12px;z-index:6;font-family:'Cinzel',serif;font-weight:800;font-size:11px;
+  color:var(--ember-soft);background:rgba(10,13,19,.65);border:1px solid var(--line);border-radius:8px;padding:3px 9px;}
+
+/* ---- Active skill selection (action bar) during interactive Arena battles ---- */
+.action-bar-wrap{margin-top:12px;}
+.action-bar-hint{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;text-align:center;}
+.action-bar{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;}
+.action-slot{
+  position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  border-radius:12px;border:2px solid color-mix(in srgb, var(--rc) 55%, var(--line));
+  background:radial-gradient(circle at 50% 15%, color-mix(in srgb, var(--rc) 26%, #0A0D13), #0A0D13 78%);
+  box-shadow:0 0 10px color-mix(in srgb, var(--rc) 30%, transparent), inset 0 0 8px rgba(0,0,0,.4);
+  padding:7px 3px 6px;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease;
+  font-family:inherit;color:var(--bone);
+}
+.action-slot:not(.locked):active{transform:scale(.94);}
+.action-slot:not(.locked):hover{box-shadow:0 0 16px color-mix(in srgb, var(--rc) 55%, transparent), inset 0 0 8px rgba(0,0,0,.4);}
+.action-slot.locked{opacity:.4;cursor:not-allowed;filter:grayscale(.6);}
+.action-slot .as-icon{font-size:19px;line-height:1;}
+.action-slot .as-name{font-size:8px;font-weight:700;text-align:center;line-height:1.15;padding:0 2px;min-height:19px;}
+.action-slot .as-meta{font-size:8.5px;font-weight:800;color:var(--energy);}
+.action-slot .as-cd{position:absolute;top:3px;right:4px;font-size:10px;font-weight:800;color:#fff;
+  background:rgba(0,0,0,.65);border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;}
 
 /* Result overlay */
 .result-overlay{
@@ -2554,7 +2577,7 @@ function startBossFlow(){
   battleInProgress = true;
   const boss = makeBoss(n);
   const result = simulateFight(buildCombatant('player',h,null), buildCombatant('enemy',null,boss));
-  renderArenaShell(h, boss, result);
+  renderArenaShell(h, boss, result.player, result.enemy);
   const mc = document.getElementById('matchCard'); if(mc && mc.scrollIntoView) mc.scrollIntoView({behavior:'smooth',block:'start'});
   playbackLog(result, ()=>finishBossBattle(result, boss));
 }
@@ -2902,7 +2925,7 @@ function buildFriendCombatant(data){
   }).filter(Boolean);
   const perks = data.perks||[];
   const c = {side:'enemy', name:data.username||def.name, def, star:data.star||1, base:Object.assign({},st),
-    hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?2:0, statuses:[], skills, basicPower:0.9, perks, assist:null};
+    hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?Math.round(ENERGY_REGEN*1.5):0, statuses:[], skills, basicPower:0.9, perks, assist:null};
   if(perks.includes('prec')) c.base.critDmg += 40;
   if(perks.includes('ward')) c.statuses.push({type:'shield', amount:Math.round(st.hp*0.18), turnsLeft:99});
   return c;
@@ -2914,7 +2937,7 @@ function startFriendBattleFlow(data){
   const player = buildCombatant('player', h, null);
   const enemy = buildFriendCombatant(data);
   const result = simulateFight(player, enemy);
-  renderArenaShell(h, {def:enemy.def, name:enemy.name}, result);
+  renderArenaShell(h, {def:enemy.def, name:enemy.name}, result.player, result.enemy);
   playbackLog(result, ()=>finishFriendBattle(result, data));
 }
 function finishFriendBattle(result, data){
@@ -2997,7 +3020,7 @@ function buildCombatant(side, h, bot){
   }
   st.hp = Math.round(st.hp);
   if(perks.includes('prec')) st.critDmg += 40;
-  const c = {side, name, def, star, base:st, hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?2:0,
+  const c = {side, name, def, star, base:st, hp:st.hp, maxHp:st.hp, energy:perks.includes('haste')?Math.round(ENERGY_REGEN*1.5):0,
     statuses:[], skills, basicPower:0.9, perks, assist};
   if(perks.includes('ward')) c.statuses.push({type:'shield', amount:Math.round(st.hp*0.18), turnsLeft:99});
   return c;
@@ -3005,7 +3028,7 @@ function buildCombatant(side, h, bot){
 
 function statusMultiplier(c, stat){
   let mult=1;
-  c.statuses.filter(s=>s.stat===stat).forEach(s=> mult *= (1+s.pct));
+  c.statuses.filter(s=>s.stat===stat).forEach(s=> mult *= (1+s.pct*(s.stacks||1)));
   return mult;
 }
 function dodgeChance(c){ let keep=1; c.statuses.forEach(s=>{ if(s.type==='dodge') keep*=(1-s.chance); }); return Math.min(0.75, 1-keep); }
@@ -3017,145 +3040,198 @@ function effSpd(c){ return c.base.spd*statusMultiplier(c,'spd'); }
 function tickStatuses(c, log){
   c.statuses.forEach(s=>{
     if(s.stat==='burn' && s.turnsLeft>0){
-      const dmg = Math.max(1, Math.round(c.maxHp*s.pct));
+      const dmg = Math.max(1, Math.round(c.maxHp*s.pct*(s.stacks||1)));
       c.hp = Math.max(0, c.hp-dmg);
-      log.push({type:'dot', actor:c.side, dmg, label:s.label||'Burn'});
+      log.push({type:'dot', actor:c.side, dmg, label:(s.label||'Burn')+((s.stacks||1)>1?' x'+s.stacks:'')});
     }
   });
   c.statuses.forEach(s=>{ s.turnsLeft--; });
   c.statuses = c.statuses.filter(s=>s.turnsLeft>0);
 }
 
-// skills fire in slot order: the order of your loadout is your priority list
-function pickSkill(c){
-  for(const sk of c.skills){
-    if(sk.def.type==='passive') continue;
-    if(sk.cdLeft<=0 && c.energy>=sk.def.cost){ return sk; }
+// Defense's flat pre-multiplier subtraction above matters early on, but once
+// skill power, elemental advantage (1.25x), signature bonuses (1.55x), crits
+// (150%+) and skill Level/Star growth all stack multiplicatively on a maxed
+// attacker, that fixed subtraction becomes negligible next to the final
+// number. Two safety nets keep fights readable even at the top end:
+// (1) a percentage-based mitigation layer that scales WITH the target's
+//     defense, applied after all multipliers, so DEF keeps mattering; and
+// (2) a hard per-hit cap (% of the target's max HP) so no single hit —
+//     however many multipliers line up — can delete a full-HP target in
+//     one shot. Multi-turn fights stay possible, and heavily-invested
+//     builds still hit noticeably harder; they just can't one-shot.
+const DEF_MITIGATION_K = 32000;
+const MAX_HIT_FRAC = 0.42; // no single hit exceeds 42% of the target's max HP — keeps fights going ~8-10 rounds instead of ending in a couple of big swings
+const DAMAGE_PACE = 0.74; // overall damage pacing dial: lower = longer fights, without touching individual skill design
+const MAX_STACKS = 3; // a reapplied buff/debuff/dot stacks up to this many instances before the oldest falls off
+const ENERGY_MAX = 8;   // energy cap — raised so energy is rarely the bottleneck...
+const ENERGY_REGEN = 2; // ...and regenerates fast; cooldowns (not energy) are meant to be the main limiter on spamming strong skills
+
+function computeDamage(attacker, target, mult, canCrit, el){
+  const dc = dodgeChance(target);
+  if(dc>0 && Math.random()<dc) return {dmg:0, crit:false, shieldAbs:0, dodged:true};
+  let dmg = Math.max(1, effAtk(attacker)*mult - effDef(target)*0.5);
+  dmg *= elemMult(el||attacker.def.el, target.def.el);
+  dmg *= vulnMult(target);
+  dmg *= DAMAGE_PACE;
+  if(attacker.perks.includes('exec') && target.hp/target.maxHp<0.35) dmg *= 1.3;
+  let crit=false;
+  if(canCrit && Math.random()*100 < (attacker.base.crit||0)){
+    crit=true; dmg *= (1+(attacker.base.critDmg||150)/100);
   }
-  return null;
+  const mitigation = effDef(target) / (effDef(target) + DEF_MITIGATION_K);
+  dmg = Math.max(1, dmg * (1-mitigation));
+  dmg = Math.min(dmg, Math.max(1, Math.ceil(target.maxHp*MAX_HIT_FRAC)));
+  let shieldAbs=0;
+  const shield = target.statuses.find(s=>s.type==='shield');
+  if(shield){
+    shieldAbs = Math.min(shield.amount, dmg);
+    shield.amount -= shieldAbs;
+    dmg -= shieldAbs;
+    if(shield.amount<=0) target.statuses = target.statuses.filter(s=>s!==shield);
+  }
+  dmg = Math.round(Math.max(shieldAbs>0? 0:1, dmg));
+  target.hp = Math.max(0, target.hp-dmg);
+  return {dmg, crit, shieldAbs};
+}
+// rune perks that trigger after a hit: Vampiric (heal) and Thorns (reflect)
+function afterHit(a, t, dmg, log){
+  if(dmg<=0) return;
+  if(a.perks.includes('vamp') && a.hp>0){
+    const hl = Math.max(1, Math.round(dmg*0.10));
+    a.hp = Math.min(a.maxHp, a.hp+hl);
+    log.push({type:'heal', actor:a.side, actorName:a.name, dmg:hl, skillName:'Vampiric'});
+  }
+  if(t.perks.includes('thorns')){
+    const rf = Math.max(1, Math.round(dmg*0.15));
+    a.hp = Math.max(0, a.hp-rf);
+    log.push({type:'dot', actor:a.side, dmg:rf, label:'Thorns'});
+  }
+}
+// Applies a status effect, letting repeated casts of the same effect (from the same skill)
+// genuinely STACK — up to MAX_STACKS instances at once — instead of piling up unbounded.
+// Each status carries a `stacks` count (>1 shown in the UI) once several instances are merged.
+function applyStatus(target, status){
+  const same = target.statuses.filter(s=>s.type===status.type && s.stat===status.stat && s.source===status.source);
+  if(same.length>0){
+    // refresh + stack: merge into the most recent matching instance, bump its stack count
+    const latest = same[same.length-1];
+    latest.turnsLeft = Math.max(latest.turnsLeft, status.turnsLeft);
+    latest.stacks = Math.min(MAX_STACKS, (latest.stacks||1) + 1);
+    latest.pct = status.pct; latest.amount = status.amount; latest.chance = status.chance; latest.label = status.label;
+    if(same.length>1){ target.statuses.splice(target.statuses.indexOf(same[0]),1); } // drop the oldest duplicate once we exceed one tracked instance
+    return latest;
+  }
+  status.stacks = 1;
+  target.statuses.push(status);
+  return status;
+}
+function statusStackMult(s){ return s.stacks||1; }
+
+// Smarter, less predictable bot/opponent decision-making: scores every usable action by
+// situational value (finishing power, self-preservation, punishing existing debuffs, keeping
+// buffs up) then rolls a weighted pick among the top contenders, so bots feel adaptive rather
+// than a fixed priority list you can always out-play the same way.
+function pickSkillAI(c, target){
+  const avail = c.skills.filter(sk=>sk.def.type!=='passive' && sk.cdLeft<=0 && c.energy>=sk.def.cost);
+  if(avail.length===0) return null;
+  const hpFrac = c.hp/c.maxHp, targetHpFrac = target.hp/target.maxHp;
+  const scored = avail.map(sk=>{
+    const sd = sk.def; let score = 1 + sd.cost*0.35;
+    if(sd.type==='attack'){
+      score += 2.2 + sd.power*2.4;
+      if(sd.punishDebuff && target.statuses.some(s=>s.type==='debuff'||s.type==='dot')) score += 3.5;
+      if(targetHpFrac < 0.32) score += 4; // go for the kill
+      if(sd.dot || sd.debuff) score += 1.2;
+    } else if(sd.type==='heal'){
+      score += hpFrac<0.55 ? 6*(1-hpFrac) : -4;
+    } else if(sd.type==='buff'){
+      const alreadyBuffed = c.statuses.some(s=>s.type==='buff'||s.type==='shield'||s.type==='dodge');
+      score += alreadyBuffed ? -2 : (sd.shield||sd.buff&&sd.buff.stat==='def' ? (hpFrac<0.55?3.2:1.5) : 1.8);
+    }
+    score *= 0.7 + Math.random()*0.6; // keeps choices from being perfectly deterministic
+    return {sk, score};
+  });
+  scored.sort((a,b)=>b.score-a.score);
+  return scored[0].sk;
+}
+
+// Core resolution of a single action (basic strike, or a chosen skill) against a target.
+// Shared by the full-auto simulation and the round-by-round interactive battle so both stay
+// perfectly consistent with each other.
+function executeChosenAction(attacker, target, sk, log){
+  if(!sk){
+    const r = computeDamage(attacker, target, attacker.basicPower, true, attacker.def.el);
+    log.push({type:'basic', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:r.dmg, crit:r.crit, skillName:'Basic Strike', dodged:!!r.dodged});
+    afterHit(attacker, target, r.dmg, log);
+    return;
+  }
+  sk.cdLeft = sk.def.cd+1;
+  attacker.energy -= sk.def.cost;
+  const sd = sk.def;
+  // Signature bond: a divine skill cast by its bonded hero (e.g. Grim Reaper) is amplified.
+  const sig = (sd.signatureHero && attacker.def.id===sd.signatureHero) ? (sd.signatureBoost||1.55) : 1;
+  // Leveling/starring a skill scales ITS OWN numbers directly: gm drives the skill's primary
+  // stat (its listed damage/heal %), egm is a softer curve for secondary effects (buffs,
+  // debuffs, dot, shield) so a maxed skill is clearly stronger without runaway numbers.
+  const gm = skillGrowthMult(sk.inst);
+  const egm = skillEffectGrowth(sk.inst);
+  if(sd.type==='attack'){
+    let hits=1;
+    if(sd.doubleHit && Math.random()<Math.min(0.95, sd.doubleHit*sig*gm)) hits=2;
+    let totalDmg=0, anyCrit=false, landed=0;
+    // punishDebuff: bonus damage against targets that are already debuffed or bleeding
+    let pw = sd.power*sig*gm;
+    if(sd.punishDebuff && target.statuses.some(s=>s.type==='debuff'||s.type==='dot')) pw *= 1+sd.punishDebuff*egm;
+    for(let i=0;i<hits;i++){
+      const r = computeDamage(attacker, target, pw, true, sd.el);
+      if(r.dodged) continue;
+      landed++; totalDmg+=r.dmg; anyCrit = anyCrit||r.crit;
+    }
+    const allDodged = landed===0;
+    log.push({type:'skill', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:totalDmg, crit:anyCrit, skillName:sd.name, hits, dodged:allDodged});
+    if(allDodged) return; // every strike was dodged: no on-hit effects
+    afterHit(attacker, target, totalDmg, log);
+    if(sd.dot){ applyStatus(target, {stat:'burn', pct:sd.dot.pct*sig*egm, turnsLeft:sd.dot.turns, type:'dot', label:sd.dot.label, source:sd.id}); }
+    if(sd.debuff){ [].concat(sd.debuff).forEach(db=>{ applyStatus(target, {stat:db.stat, pct:db.pct*sig*egm, turnsLeft:db.turns, type:'debuff', source:sd.id+':'+db.stat}); }); }
+    if(sd.lifesteal){ const heal=Math.round(totalDmg*Math.min(0.9,sd.lifesteal*sig*gm)); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:'Siphon'}); }
+    if(sd.heal){ const heal=Math.round(effAtk(attacker)*sd.heal*egm*sig); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name}); }
+  } else if(sd.type==='heal'){
+    const heal = Math.round(attacker.maxHp*0.02 + effAtk(attacker)*sd.power*sig*gm);
+    attacker.hp = Math.min(attacker.maxHp, attacker.hp+heal);
+    log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name});
+  } else if(sd.type==='buff'){
+    if(sd.buff) applyStatus(attacker, {stat:sd.buff.stat, pct:sd.buff.pct*sig*egm, turnsLeft:sd.buff.turns, type:'buff', source:sd.id});
+    if(sd.shield){ applyStatus(attacker, {type:'shield', amount:Math.round(attacker.maxHp*sd.shield*sig*egm), turnsLeft:99, source:sd.id+':shield'}); }
+    if(sd.dodge){ applyStatus(attacker, {type:'dodge', chance:Math.min(0.65, sd.dodge.pct*sig*egm), turnsLeft:sd.dodge.turns, source:sd.id+':dodge'}); }
+    log.push({type:'buff', actor:attacker.side, actorName:attacker.name, skillName:sd.name});
+  }
+}
+
+function act(attacker, target, log){
+  attacker.energy = Math.min(ENERGY_MAX, attacker.energy+ENERGY_REGEN);
+  tickStatuses(attacker, log);
+  if(attacker.hp<=0) return;
+  const sk = pickSkillAI(attacker, target);
+  executeChosenAction(attacker, target, sk, log);
 }
 
 function runBattle(h, bot){
   return simulateFight(buildCombatant('player', h, bot), buildCombatant('enemy', null, bot));
 }
+// Full-auto simulation: used for bot power calibration (many fast iterations) and for
+// Boss/Friend fights, which stay quick-resolve. The interactive Arena battle below uses the
+// same act()/executeChosenAction() engine but lets the player choose their own action each round.
 function simulateFight(player, enemy){
   const log = [];
-  const MAX_ROUNDS = 22;
+  const MAX_ROUNDS = 16;
   let round=0;
-
-  // Defense's flat pre-multiplier subtraction above matters early on, but once
-  // skill power, elemental advantage (1.25x), signature bonuses (1.55x), crits
-  // (150%+) and skill Level/Star growth all stack multiplicatively on a maxed
-  // attacker, that fixed subtraction becomes negligible next to the final
-  // number. Two safety nets keep fights readable even at the top end:
-  // (1) a percentage-based mitigation layer that scales WITH the target's
-  //     defense, applied after all multipliers, so DEF keeps mattering; and
-  // (2) a hard per-hit cap (% of the target's max HP) so no single hit —
-  //     however many multipliers line up — can delete a full-HP target in
-  //     one shot. Multi-turn fights stay possible, and heavily-invested
-  //     builds still hit noticeably harder; they just can't one-shot.
-  const DEF_MITIGATION_K = 32000;
-  const MAX_HIT_FRAC = 0.60; // no single hit exceeds 60% of the target's max HP
-  function computeDamage(attacker, target, mult, canCrit, el){
-    const dc = dodgeChance(target);
-    if(dc>0 && Math.random()<dc) return {dmg:0, crit:false, shieldAbs:0, dodged:true};
-    let dmg = Math.max(1, effAtk(attacker)*mult - effDef(target)*0.5);
-    dmg *= elemMult(el||attacker.def.el, target.def.el);
-    dmg *= vulnMult(target);
-    if(attacker.perks.includes('exec') && target.hp/target.maxHp<0.35) dmg *= 1.3;
-    let crit=false;
-    if(canCrit && Math.random()*100 < (attacker.base.crit||0)){
-      crit=true; dmg *= (1+(attacker.base.critDmg||150)/100);
-    }
-    const mitigation = effDef(target) / (effDef(target) + DEF_MITIGATION_K);
-    dmg = Math.max(1, dmg * (1-mitigation));
-    dmg = Math.min(dmg, Math.max(1, Math.ceil(target.maxHp*MAX_HIT_FRAC)));
-    let shieldAbs=0;
-    const shield = target.statuses.find(s=>s.type==='shield');
-    if(shield){
-      shieldAbs = Math.min(shield.amount, dmg);
-      shield.amount -= shieldAbs;
-      dmg -= shieldAbs;
-      if(shield.amount<=0) target.statuses = target.statuses.filter(s=>s!==shield);
-    }
-    dmg = Math.round(Math.max(shieldAbs>0? 0:1, dmg));
-    target.hp = Math.max(0, target.hp-dmg);
-    return {dmg, crit, shieldAbs};
-  }
-  // rune perks that trigger after a hit: Vampiric (heal) and Thorns (reflect)
-  function afterHit(a, t, dmg){
-    if(dmg<=0) return;
-    if(a.perks.includes('vamp') && a.hp>0){
-      const hl = Math.max(1, Math.round(dmg*0.10));
-      a.hp = Math.min(a.maxHp, a.hp+hl);
-      log.push({type:'heal', actor:a.side, actorName:a.name, dmg:hl, skillName:'Vampiric'});
-    }
-    if(t.perks.includes('thorns')){
-      const rf = Math.max(1, Math.round(dmg*0.15));
-      a.hp = Math.max(0, a.hp-rf);
-      log.push({type:'dot', actor:a.side, dmg:rf, label:'Thorns'});
-    }
-  }
-
-  function act(attacker, target){
-    attacker.energy = Math.min(5, attacker.energy+1);
-    tickStatuses(attacker, log);
-    if(attacker.hp<=0) return;
-    const sk = pickSkill(attacker);
-    if(!sk){
-      const r = computeDamage(attacker, target, attacker.basicPower, true, attacker.def.el);
-      log.push({type:'basic', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:r.dmg, crit:r.crit, skillName:'Basic Strike', dodged:!!r.dodged});
-      afterHit(attacker, target, r.dmg);
-      return;
-    }
-    sk.cdLeft = sk.def.cd+1;
-    attacker.energy -= sk.def.cost;
-    const sd = sk.def;
-    // Signature bond: a divine skill cast by its bonded hero (e.g. Grim Reaper) is amplified.
-    const sig = (sd.signatureHero && attacker.def.id===sd.signatureHero) ? (sd.signatureBoost||1.55) : 1;
-    // Leveling/starring a skill scales ITS OWN numbers directly: gm drives the skill's primary
-    // stat (its listed damage/heal %), egm is a softer curve for secondary effects (buffs,
-    // debuffs, dot, shield) so a maxed skill is clearly stronger without runaway numbers.
-    const gm = skillGrowthMult(sk.inst);
-    const egm = skillEffectGrowth(sk.inst);
-    if(sd.type==='attack'){
-      let hits=1;
-      if(sd.doubleHit && Math.random()<Math.min(0.95, sd.doubleHit*sig*gm)) hits=2;
-      let totalDmg=0, anyCrit=false, landed=0;
-      // punishDebuff: bonus damage against targets that are already debuffed or bleeding
-      let pw = sd.power*sig*gm;
-      if(sd.punishDebuff && target.statuses.some(s=>s.type==='debuff'||s.type==='dot')) pw *= 1+sd.punishDebuff*egm;
-      for(let i=0;i<hits;i++){
-        const r = computeDamage(attacker, target, pw, true, sd.el);
-        if(r.dodged) continue;
-        landed++; totalDmg+=r.dmg; anyCrit = anyCrit||r.crit;
-      }
-      const allDodged = landed===0;
-      log.push({type:'skill', actor:attacker.side, actorName:attacker.name, target:target.side, dmg:totalDmg, crit:anyCrit, skillName:sd.name, hits, dodged:allDodged});
-      if(allDodged) return; // every strike was dodged: no on-hit effects
-      afterHit(attacker, target, totalDmg);
-      if(sd.dot){ target.statuses.push({stat:'burn', pct:sd.dot.pct*sig*egm, turnsLeft:sd.dot.turns, type:'dot', label:sd.dot.label}); }
-      if(sd.debuff){ [].concat(sd.debuff).forEach(db=>{ target.statuses.push({stat:db.stat, pct:db.pct*sig*egm, turnsLeft:db.turns, type:'debuff'}); }); }
-      if(sd.lifesteal){ const heal=Math.round(totalDmg*Math.min(0.9,sd.lifesteal*sig*gm)); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:'Siphon'}); }
-      if(sd.heal){ const heal=Math.round(effAtk(attacker)*sd.heal*egm*sig); attacker.hp=Math.min(attacker.maxHp, attacker.hp+heal); log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name}); }
-    } else if(sd.type==='heal'){
-      const heal = Math.round(attacker.maxHp*0.02 + effAtk(attacker)*sd.power*sig*gm);
-      attacker.hp = Math.min(attacker.maxHp, attacker.hp+heal);
-      log.push({type:'heal', actor:attacker.side, actorName:attacker.name, dmg:heal, skillName:sd.name});
-    } else if(sd.type==='buff'){
-      if(sd.buff) attacker.statuses.push({stat:sd.buff.stat, pct:sd.buff.pct*sig*egm, turnsLeft:sd.buff.turns, type:'buff'});
-      if(sd.shield){ attacker.statuses.push({type:'shield', amount:Math.round(attacker.maxHp*sd.shield*sig*egm), turnsLeft:99}); }
-      if(sd.dodge){ attacker.statuses.push({type:'dodge', chance:Math.min(0.65, sd.dodge.pct*sig*egm), turnsLeft:sd.dodge.turns}); }
-      log.push({type:'buff', actor:attacker.side, actorName:attacker.name, skillName:sd.name});
-    }
-  }
-
   while(round<MAX_ROUNDS && player.hp>0 && enemy.hp>0){
     round++;
     const order = effSpd(player) >= effSpd(enemy) ? [player,enemy] : [enemy,player];
     order.forEach(actor=>{
       if(player.hp<=0||enemy.hp<=0) return;
-      act(actor, actor===player? enemy: player);
+      act(actor, actor===player? enemy: player, log);
     });
     // helper assist strike every 3rd round
     if(player.assist && round%(player.assist.duo?2:3)===0 && player.hp>0 && enemy.hp>0){
@@ -3169,6 +3245,69 @@ function simulateFight(player, enemy){
 
   const win = player.hp>0 && (enemy.hp<=0 || player.hp/player.maxHp > enemy.hp/enemy.maxHp);
   return {log, player, enemy, round, win, hpPct: Math.round(Math.max(0,player.hp)/player.maxHp*100)};
+}
+
+/* =========================================================================
+   INTERACTIVE ARENA BATTLE — the player actively picks an action each round
+   without knowing the opponent's choice in advance; energy/cooldowns keep
+   strong skills from being spammed; statuses (dots/debuffs/buffs) persist
+   and stack across rounds so earlier picks interact with later ones.
+========================================================================= */
+function newInteractiveBattle(h, bot){
+  const player = buildCombatant('player', h, bot);
+  const enemy = buildCombatant('enemy', null, bot);
+  return {player, enemy, round:0, log:[], done:false, win:false, hpPct:100, curP:player.maxHp, curE:enemy.maxHp};
+}
+function playerRoundOptions(battle){
+  const p = battle.player;
+  const previewEnergy = Math.min(ENERGY_MAX, p.energy+ENERGY_REGEN);
+  const opts = [{id:'basic', name:'Basic Strike', icon:'⚔', desc:'A reliable no-cost attack.', cost:0, cdLeft:0, usable:true, type:'basic', rarity:'common'}];
+  p.skills.forEach((sk,idx)=>{
+    if(sk.def.type==='passive') return;
+    opts.push({
+      id:'sk'+idx, idx, name:sk.def.name, icon:sk.def.icon, desc:sk.def.desc,
+      cost:sk.def.cost, cdLeft:sk.cdLeft, type:sk.def.type, rarity:sk.def.rarity,
+      usable: sk.cdLeft<=0 && previewEnergy>=sk.def.cost
+    });
+  });
+  return {opts, previewEnergy};
+}
+function resolveInteractiveRound(battle, choiceId){
+  const {player, enemy} = battle;
+  battle.round++;
+  const log = [];
+  let playerSk = null;
+  if(choiceId && choiceId.indexOf('sk')===0){ playerSk = player.skills[parseInt(choiceId.slice(2),10)]; }
+  const order = effSpd(player) >= effSpd(enemy) ? [player,enemy] : [enemy,player];
+  order.forEach(actor=>{
+    if(player.hp<=0 || enemy.hp<=0) return;
+    actor.energy = Math.min(ENERGY_MAX, actor.energy+ENERGY_REGEN);
+    tickStatuses(actor, log);
+    if(actor.hp<=0) return;
+    const target = actor===player ? enemy : player;
+    let sk;
+    if(actor===player){
+      sk = (playerSk && playerSk.cdLeft<=0 && actor.energy>=playerSk.def.cost) ? playerSk : null;
+    } else {
+      sk = pickSkillAI(actor, target);
+    }
+    executeChosenAction(actor, target, sk, log);
+  });
+  if(player.assist && battle.round%(player.assist.duo?2:3)===0 && player.hp>0 && enemy.hp>0){
+    const ps = {base:{atk:player.assist.atk, crit:player.assist.duo?25:8, critDmg:player.assist.duo?200:150}, statuses:[], perks:[], def:{el:player.assist.el}};
+    const r = computeDamage(ps, enemy, 1.0, true, player.assist.el);
+    log.push({type:'skill', actor:'player', actorName:player.name, target:'enemy', dmg:r.dmg, crit:r.crit, skillName:'Assist: '+player.assist.name, hits:1});
+  }
+  player.skills.forEach(s=>s.cdLeft=Math.max(0,s.cdLeft-1));
+  enemy.skills.forEach(s=>s.cdLeft=Math.max(0,s.cdLeft-1));
+  battle.log.push(...log);
+  const MAX_ROUNDS = 16;
+  if(player.hp<=0 || enemy.hp<=0 || battle.round>=MAX_ROUNDS){
+    battle.done = true;
+    battle.win = player.hp>0 && (enemy.hp<=0 || player.hp/player.maxHp > enemy.hp/enemy.maxHp);
+    battle.hpPct = Math.round(Math.max(0,player.hp)/player.maxHp*100);
+  }
+  return log;
 }
 
 function computeRank(result){
@@ -3186,6 +3325,7 @@ function computeRank(result){
    BATTLE PLAYBACK (UI)
 ========================================================================= */
 let battleInProgress=false;
+let currentBattle=null; // the live interactive battle state, while an Arena fight is in progress
 function startBattleFlow(){
   if(battleInProgress) return;
   const h = activeHero();
@@ -3195,34 +3335,174 @@ function startBattleFlow(){
   }
   battleInProgress=true;
   const bot = S.currentBot;
-  const result = runBattle(h, bot);
-  renderArenaShell(h, bot, result);
-  playbackLog(result);
+  const battle = newInteractiveBattle(h, bot);
+  currentBattle = battle;
+  renderArenaShell(h, bot, battle.player, battle.enemy, {interactive:true});
+  renderStatusChips(battle);
+  renderEnergyDots(battle);
+  renderActionBar(battle);
 }
 
-function renderArenaShell(h, bot, result){
+function renderArenaShell(h, bot, playerC, enemyC, opts){
+  opts = opts||{};
   const def = charDef(h.defId);
   const card = document.getElementById('matchCard');
   card.innerHTML = `
     <div class="arena" id="arenaBox">
-      <button class="btn btn-ghost btn-sm skip-btn" id="btnSkipBattle">Skip ▶▶</button>
+      ${opts.interactive
+        ? `<button class="btn btn-ghost btn-sm skip-btn" id="btnAutoFinish">Auto ▶▶</button><div class="round-badge" id="roundBadge">Round 1</div>`
+        : `<button class="btn btn-ghost btn-sm skip-btn" id="btnSkipBattle">Skip ▶▶</button>`}
       <div class="combatant" id="c_player">
         <div class="c-head"><div class="c-portrait ${themeCls(def)}">${def.icon}</div><div class="c-name">${def.name}<br><small>YOU</small></div></div>
-        <div class="hpbar-wrap"><div class="hpbar" id="hp_player" style="width:100%"></div><div class="hp-text" id="hpt_player">${result.player.maxHp}/${result.player.maxHp}</div></div>
+        <div class="hpbar-wrap"><div class="hpbar" id="hp_player" style="width:100%"></div><div class="hp-text" id="hpt_player">${playerC.maxHp}/${playerC.maxHp}</div></div>
         <div class="energy-dots" id="en_player"></div>
         <div class="status-row" id="st_player"></div>
       </div>
       <div class="combatant" id="c_enemy">
         <div class="c-head"><div class="c-portrait ${themeCls(bot.def)}">${bot.def.icon}</div><div class="c-name">${bot.name}<br><small>OPPONENT</small></div></div>
-        <div class="hpbar-wrap"><div class="hpbar enemy" id="hp_enemy" style="width:100%"></div><div class="hp-text" id="hpt_enemy">${result.enemy.maxHp}/${result.enemy.maxHp}</div></div>
+        <div class="hpbar-wrap"><div class="hpbar enemy" id="hp_enemy" style="width:100%"></div><div class="hp-text" id="hpt_enemy">${enemyC.maxHp}/${enemyC.maxHp}</div></div>
         <div class="energy-dots" id="en_enemy"></div>
         <div class="status-row" id="st_enemy"></div>
       </div>
     </div>
+    ${opts.interactive ? `<div class="action-bar-wrap"><div class="action-bar-hint" id="actionHint">Choose your action</div><div class="action-bar" id="actionBar"></div></div>` : ''}
     <div class="log-wrap" id="battleLogWrap"></div>
   `;
-  document.getElementById('btnSkipBattle').addEventListener('click', ()=>{ skipRequested=true; });
-  for(let i=0;i<5;i++){ document.getElementById('en_player').innerHTML+='<span class="edot"></span>'; document.getElementById('en_enemy').innerHTML+='<span class="edot"></span>'; }
+  if(opts.interactive){
+    document.getElementById('btnAutoFinish').addEventListener('click', autoFinishBattle);
+  } else {
+    document.getElementById('btnSkipBattle').addEventListener('click', ()=>{ skipRequested=true; });
+  }
+  for(let i=0;i<ENERGY_MAX;i++){ document.getElementById('en_player').innerHTML+='<span class="edot"></span>'; document.getElementById('en_enemy').innerHTML+='<span class="edot"></span>'; }
+}
+
+/* ---- Skill-hand action bar: the player picks one action per round ---- */
+function renderActionBar(battle){
+  const bar = document.getElementById('actionBar');
+  const hint = document.getElementById('actionHint');
+  const badge = document.getElementById('roundBadge');
+  if(!bar) return;
+  if(badge) badge.textContent = 'Round '+(battle.round+1);
+  if(hint) hint.textContent = 'Choose your action — energy '+Math.min(ENERGY_MAX,battle.player.energy+ENERGY_REGEN)+'/'+ENERGY_MAX;
+  const {opts} = playerRoundOptions(battle);
+  bar.innerHTML = opts.map(o=>{
+    const rc = rarityColorRaw(o.rarity)||'#9AA5B4';
+    const locked = !o.usable;
+    return `<button class="action-slot ${locked?'locked':''}" style="--rc:${rc};" data-choice="${o.id}" ${locked?'disabled':''} title="${o.desc}">
+      <span class="as-icon">${o.icon}</span>
+      <span class="as-name">${o.name}</span>
+      <span class="as-meta">${o.type==='basic'?'Free':'⚡'+o.cost}</span>
+      ${o.cdLeft>0?`<span class="as-cd">${o.cdLeft}</span>`:''}
+    </button>`;
+  }).join('');
+  bar.querySelectorAll('.action-slot:not(.locked)').forEach(btn=>{
+    btn.addEventListener('click', ()=>handlePlayerChoice(battle, btn.getAttribute('data-choice')));
+  });
+}
+function handlePlayerChoice(battle, choiceId){
+  const bar = document.getElementById('actionBar');
+  if(bar) bar.querySelectorAll('.action-slot').forEach(b=>b.setAttribute('disabled','disabled'));
+  const hint = document.getElementById('actionHint');
+  if(hint) hint.textContent = 'Resolving round…';
+  const events = resolveInteractiveRound(battle, choiceId);
+  playbackRoundEvents(battle, events, ()=>{
+    renderStatusChips(battle);
+      renderEnergyDots(battle);
+    if(battle.done){
+      finishInteractiveBattle(battle);
+    } else {
+      renderActionBar(battle);
+    }
+  });
+}
+// Lets the AI play out the rest of the fight quickly, for players who just want the result.
+function autoFinishBattle(){
+  const battle = currentBattle;
+  if(!battle || battle.done) return;
+  const bar = document.getElementById('actionBar');
+  if(bar) bar.querySelectorAll('.action-slot').forEach(b=>b.setAttribute('disabled','disabled'));
+  skipRequested = true;
+  function tick(){
+    if(battle.done){ renderStatusChips(battle); renderEnergyDots(battle); finishInteractiveBattle(battle); return; }
+    const {opts} = playerRoundOptions(battle);
+    const usable = opts.filter(o=>o.usable && o.id!=='basic');
+    const choice = usable.length ? usable[Math.floor(Math.random()*usable.length)].id : 'basic';
+    const events = resolveInteractiveRound(battle, choice);
+    playbackRoundEvents(battle, events, tick);
+  }
+  tick();
+}
+function finishInteractiveBattle(battle){
+  const hint = document.getElementById('actionHint');
+  if(hint) hint.textContent = battle.win ? 'Victory!' : 'Defeated…';
+  const bar = document.getElementById('actionBar');
+  if(bar) bar.innerHTML='';
+  currentBattle = null;
+  finishBattle({log:battle.log, player:battle.player, enemy:battle.enemy, round:battle.round, win:battle.win, hpPct:battle.hpPct});
+}
+function renderEnergyDots(battle){
+  ['player','enemy'].forEach(side=>{
+    const wrap = document.getElementById('en_'+side);
+    if(!wrap) return;
+    const en = Math.round(battle[side].energy);
+    wrap.querySelectorAll('.edot').forEach((dot,i)=>{ dot.classList.toggle('on', i<en); });
+  });
+}
+function renderStatusChips(battle){
+  ['player','enemy'].forEach(side=>{
+    const el = document.getElementById('st_'+side);
+    if(!el) return;
+    const c = battle[side];
+    el.innerHTML = c.statuses.map(s=>{
+      const stacks = (s.stacks||1)>1 ? ' x'+s.stacks : '';
+      if(s.type==='shield') return `<span class="status-chip status-shield">🛡 Shield${stacks}</span>`;
+      if(s.type==='dodge') return `<span class="status-chip status-frost">💨 Evasive (${s.turnsLeft})</span>`;
+      if(s.type==='dot') return `<span class="status-chip status-burn">${(s.label||'Burn')}${stacks} (${s.turnsLeft})</span>`;
+      if(s.type==='debuff') return `<span class="status-chip status-def">${s.stat.toUpperCase()} ↓${stacks} (${s.turnsLeft})</span>`;
+      if(s.type==='buff') return `<span class="status-chip status-spd">${s.stat.toUpperCase()} ↑${stacks} (${s.turnsLeft})</span>`;
+      return '';
+    }).join('');
+  });
+}
+
+// Plays back the events of a single interactive round, updating the live battle's running
+// HP totals (battle.curP/battle.curE) so multiple rounds animate correctly back-to-back.
+function playbackRoundEvents(battle, events, onFinish){
+  const maxHpP = battle.player.maxHp, maxHpE = battle.enemy.maxHp;
+  const logWrap = document.getElementById('battleLogWrap');
+  let i=0;
+  function step(){
+    if(i>=events.length){ onFinish(); return; }
+    const evt = events[i]; i++;
+    applyRoundEventToUI(evt);
+    const line = document.createElement('div');
+    line.className='log-line'+(evt.crit?' crit':'');
+    line.innerHTML = logLineHtml(evt);
+    logWrap.prepend(line);
+    const delay = skipRequested? 20 : (evt.type==='dot'?260:480);
+    setTimeout(step, delay);
+  }
+  function applyRoundEventToUI(evt){
+    if(evt.type==='dot'){
+      if(evt.actor==='player'){ battle.curP=Math.max(0,battle.curP-evt.dmg); updateHp('player',battle.curP,maxHpP); }
+      else { battle.curE=Math.max(0,battle.curE-evt.dmg); updateHp('enemy',battle.curE,maxHpE); }
+      floatDamage(evt.actor, evt.dmg, false);
+      return;
+    }
+    if(evt.type==='heal'){
+      if(evt.actor==='player'){ battle.curP=Math.min(maxHpP,battle.curP+evt.dmg); updateHp('player',battle.curP,maxHpP); }
+      else { battle.curE=Math.min(maxHpE,battle.curE+evt.dmg); updateHp('enemy',battle.curE,maxHpE); }
+      floatDamage(evt.actor, evt.dmg, 'heal');
+      return;
+    }
+    if(evt.type==='buff'){ flashActor(evt.actor); return; }
+    if(evt.dodged){ floatDamage(evt.target, 0, 'dodge'); return; }
+    if(evt.target==='enemy'){ battle.curE=Math.max(0,battle.curE-evt.dmg); updateHp('enemy',battle.curE,maxHpE); }
+    else { battle.curP=Math.max(0,battle.curP-evt.dmg); updateHp('player',battle.curP,maxHpP); }
+    floatDamage(evt.target, evt.dmg, evt.crit);
+    shakeActor(evt.target);
+  }
+  step();
 }
 
 let skipRequested=false;
